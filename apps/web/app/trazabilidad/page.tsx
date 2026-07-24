@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { GitBranch, ArrowRight, Boxes, ShieldCheck } from 'lucide-react';
 import { AppShell } from '../../components/AppShell';
 import { ProvenanceDialog } from '../../components/provenance/ProvenanceDialog';
-import { StellarExpertButton, StatusBadge, EmptyState, fmtDate } from '../../components/ui';
+import { StellarExpertButton, StatusBadge, EmptyState, fmtDate } from '../../components/status-ui';
 import { apiFetch } from '../../lib/api';
 import { unwrapPaginated } from '../../lib/pagination';
 import { bondExplorerUrl } from '../../lib/stellar';

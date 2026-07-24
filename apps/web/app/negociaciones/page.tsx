@@ -5,7 +5,7 @@ import { Handshake, Shield, ShieldCheck } from 'lucide-react';
 import { AppShell } from '../../components/AppShell';
 import { ProvenanceDialog } from '../../components/provenance/ProvenanceDialog';
 import { PaginationControls } from '../../components/PaginationControls';
-import { StatusBadge, EmptyState, fmtMoney } from '../../components/ui';
+import { StatusBadge, EmptyState, fmtMoney } from '../../components/status-ui';
 import { PAYMENT_METHOD_META } from '../../components/PaymentMethodPicker';
 import { apiFetch, type Me } from '../../lib/api';
 import { contractUrl } from '../../lib/stellar';
