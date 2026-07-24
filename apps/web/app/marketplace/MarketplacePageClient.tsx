@@ -4,7 +4,7 @@ import { notify } from '../../components/Toast';
 import { useCallback, useEffect, useState } from 'react';
 import { Handshake, ShieldCheck, SlidersHorizontal, Store, Smartphone, Landmark, Wallet } from 'lucide-react';
 import { AppShell } from '../../components/AppShell';
-import { EmptyState, StatusBadge, StellarExpertButton } from '../../components/ui';
+import { EmptyState, StatusBadge, StellarExpertButton } from '../../components/status-ui';
 import { apiFetch } from '../../lib/api';
 import { unwrapPaginated } from '../../lib/pagination';
 import { bondExplorerUrl } from '../../lib/stellar';

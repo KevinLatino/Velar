@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Wallet, TrendingUp, Boxes, ShoppingCart, FileText } from 'lucide-react';
 import { ContractReaderDialog } from '../../components/contract-reader/ContractReaderDialog';
 import { AppShell } from '../../components/AppShell';
-import { StellarExpertButton, StatusBadge, EmptyState, fmtMoney } from '../../components/ui';
+import { StellarExpertButton, StatusBadge, EmptyState, fmtMoney } from '../../components/status-ui';
 import { PaginationControls } from '../../components/PaginationControls';
 import { PublishBondDialog, type PaymentMethod } from '../../components/PublishBondDialog';
 import { apiFetch } from '../../lib/api';

@@ -351,3 +351,45 @@ Botón "Procedencia verificada" (autenticado) en `trazabilidad/`, `tse/trazabili
 embebido en modo público. Los componentes son presentacionales (reciben datos del
 motor); el fetch vive en `ProvenanceExplorer`. Nunca se usa `service_role` ni secretos
 en el cliente.
+
+---
+
+## 14. Design System (`components/ui/`)
+
+Librería interna tipada, accesible y temable. **Preferí estas primitivas antes que
+estilar a mano.** Importá siempre desde el barrel:
+
+```tsx
+import { Button, Card, Field, Input, Badge, Modal, Tabs, Stack, useTheme } from '@/components/ui';
+```
+
+### Tokens (fuente de verdad)
+- Los valores viven en `app/globals.css` (`@theme` + `:root`) como variables CSS.
+- Espejo tipado en `components/ui/tokens.ts` para consumir desde TS/JS (charts, estilos inline).
+- **Para colores en runtime usá `colorVar('primary')`, no el hex literal** — así respeta el tema.
+
+### Theming (claro/oscuro + país)
+- `ThemeProvider` (ya montado en `AppProviders`) refleja `data-theme` y `data-country` en `<html>`.
+- `useTheme()` → `{ theme, setTheme, toggleTheme }`. `<ThemeSwitcher />` es el botón listo para usar.
+- El tema persiste en `localStorage` y se aplica antes del primer paint (sin parpadeo).
+- Dark mode y branding por país se resuelven **solo** sobreescribiendo variables CSS; no dupliques valores.
+
+### Componentes disponibles
+`Button`, `IconButton`, `Card`, `Badge`, `Tag`, `Alert`, `Spinner`, `Skeleton`,
+`EmptyState`, `Field`, `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Switch`,
+`Stack`, `Cluster`, `Grid`, `Tabs`, `Tooltip`, `Modal`, `ThemeSwitcher`.
+
+Galería viva en **`/design-system`** (cada variante + estado).
+
+### Lineamiento anti-ad-hoc (obligatorio en código nuevo)
+1. **No** escribas `<button className="...">` a mano → usá `<Button>`.
+2. **No** hardcodees colores (`#0B1739`, `bg-blue-600`, `text-emerald-700`) → usá tokens
+   (`text-on-surface`, `bg-primary-container`, `colorVar(...)`).
+3. **No** hardcodees espaciados sueltos → usá la escala (`gap-4`, `Stack`, `space` de tokens).
+4. Para tarjetas/badges/inputs/tablas usá las primitivas, no clases sueltas repetidas.
+
+### Cómo extender
+- Nuevo componente → archivo en `components/ui/`, tipado y accesible (label/aria/focus/reduced-motion),
+  exportado en `index.ts`, y agregado a `/design-system`.
+- Nuevo token → declaralo en `globals.css` (con override dark/país si aplica) **y** en `tokens.ts`
+  con el mismo nombre. No dejes valores que puedan divergir.
