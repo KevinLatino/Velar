@@ -23,6 +23,7 @@ __exportStar(require("./report"), exports);
 __exportStar(require("./escrow"), exports);
 __exportStar(require("./api"), exports);
 __exportStar(require("./notification"), exports);
+__exportStar(require("./notifications"), exports);
 __exportStar(require("./errors"), exports);
 __exportStar(require("./contracts"), exports);
 __exportStar(require("./contract-model"), exports);
