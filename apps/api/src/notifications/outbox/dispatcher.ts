@@ -37,6 +37,8 @@ export interface DigestQueue {
     category: NotificationCategory,
     windowKey: string,
     notification: RenderedNotification,
+    /** ISO-8601 end of the digest/quiet-hours window (`RoutingDecision.deliverAt`). */
+    windowEndsAt: string,
   ): Promise<void>;
 }
 
@@ -171,6 +173,7 @@ export class OutboxDispatcher {
                 recipient.category,
                 decision.digestWindowKey ?? '',
                 rendered,
+                decision.deliverAt,
               );
               continue;
             }

@@ -94,6 +94,7 @@ class InMemoryDigestQueue implements DigestQueue {
     category: string;
     windowKey: string;
     notification: RenderedNotification;
+    windowEndsAt: string;
   }> = [];
 
   async enqueue(
@@ -101,8 +102,15 @@ class InMemoryDigestQueue implements DigestQueue {
     category: RenderedNotification['category'],
     windowKey: string,
     notification: RenderedNotification,
+    windowEndsAt: string,
   ): Promise<void> {
-    this.items.push({ recipientId, category, windowKey, notification });
+    this.items.push({
+      recipientId,
+      category,
+      windowKey,
+      notification,
+      windowEndsAt,
+    });
   }
 }
 

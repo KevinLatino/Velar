@@ -310,6 +310,49 @@ const REGISTRY: TemplateRegistry = {
         `<p>${str(d, 'eventType') || 'System update'}</p>`,
     },
   ),
+
+  'notification.digest': localePair(
+    {
+      subject: () => 'Resumen de notificaciones',
+      body: (d) => {
+        const items = Array.isArray(d.items) ? d.items : [];
+        const lines = items
+          .map((item) => {
+            const text =
+              typeof item === 'string'
+                ? item
+                : item &&
+                    typeof item === 'object' &&
+                    'subject' in (item as object)
+                  ? String((item as { subject: unknown }).subject)
+                  : String(item ?? '');
+            return `<p>• ${text}</p>`;
+          })
+          .join('');
+        return `<p>Resumen de notificaciones:</p>${lines}`;
+      },
+    },
+    {
+      subject: () => 'Notification digest',
+      body: (d) => {
+        const items = Array.isArray(d.items) ? d.items : [];
+        const lines = items
+          .map((item) => {
+            const text =
+              typeof item === 'string'
+                ? item
+                : item &&
+                    typeof item === 'object' &&
+                    'subject' in (item as object)
+                  ? String((item as { subject: unknown }).subject)
+                  : String(item ?? '');
+            return `<p>• ${text}</p>`;
+          })
+          .join('');
+        return `<p>Notification digest:</p>${lines}`;
+      },
+    },
+  ),
 };
 
 export class StaticTemplateEngine implements TemplateEngine {
