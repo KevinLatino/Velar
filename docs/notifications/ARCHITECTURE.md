@@ -244,7 +244,7 @@ DST-correct do-not-disturb windows.
 | `timezone` | `text` NOT NULL | IANA zone (e.g. `America/Costa_Rica`) |
 | `start_minute` | `int` | Minutes from midnight (0–1439) |
 | `end_minute` | `int` | Minutes from midnight (0–1439); may wrap midnight |
-| `days` | `smallint[]` DEFAULT `'{0,1,2,3,4,5,6}'` | ISO weekday indices (0 = Monday) |
+| `days` | `smallint[]` DEFAULT `'{0,1,2,3,4,5,6}'` | Day indices, 0 = Sunday .. 6 = Saturday (JS `Date.getDay()` convention, not ISO weekday) |
 
 ### `notification_digest_settings`
 

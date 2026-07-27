@@ -283,7 +283,7 @@ CREATE POLICY notification_preferences_owner ON notification_preferences
 -- ── 5. notification_quiet_hours ───────────────────────────────
 -- VELAR: ventanas do-not-disturb (DST-correct en la app vía luxon).
 -- start_minute/end_minute: minutos desde medianoche (0–1439);
--- end puede cruzar medianoche. days: índices ISO weekday (0 = lunes).
+-- end puede cruzar medianoche. days: índices de día de semana, 0 = domingo .. 6 = sábado (convención JS Date.getDay(), NO ISO weekday).
 
 CREATE TABLE IF NOT EXISTS notification_quiet_hours (
   user_id      uuid PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
