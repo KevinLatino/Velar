@@ -26,6 +26,8 @@ import type { RealtimeTransport } from './domain/transport.interface';
 import { DispatcherRunnerService } from './dispatcher-runner.service';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
+import { PreferencesController } from './preferences.controller';
+import { PreferencesService } from './preferences.service';
 import {
   DEAD_LETTER_SINK,
   DEDUP_STORE,
@@ -68,6 +70,7 @@ import { InMemoryRealtimeTransport } from './transport/in-memory-transport';
   imports: [AuthModule],
   providers: [
     NotificationsService,
+    PreferencesService,
     DispatcherRunnerService,
     { provide: OUTBOX_STORE, useClass: PostgresOutboxStore },
     { provide: DEDUP_STORE, useClass: PostgresDedupStore },
@@ -153,7 +156,7 @@ import { InMemoryRealtimeTransport } from './transport/in-memory-transport';
         ),
     },
   ],
-  controllers: [NotificationsController],
+  controllers: [NotificationsController, PreferencesController],
   exports: [NotificationsService, OUTBOX_DISPATCHER, REALTIME_TRANSPORT],
 })
 export class NotificationsModule {}
