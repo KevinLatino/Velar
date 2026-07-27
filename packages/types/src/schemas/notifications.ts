@@ -88,3 +88,20 @@ export const userNotificationPreferencesResponseSchema = z.object({
     cadence: digestCadenceSchema,
   })),
 });
+
+const latencyPercentilesSchema = z.object({
+  p50: z.number(),
+  p95: z.number(),
+  p99: z.number(),
+  avg: z.number(),
+});
+
+export const metricsSnapshotResponseSchema = z.object({
+  emitted: z.record(z.string(), z.number()),
+  delivered: z.record(z.string(), z.number()),
+  deduped: z.record(z.string(), z.number()),
+  failed: z.record(z.string(), z.number()),
+  rateLimited: z.record(z.string(), z.number()),
+  dlqDepth: z.number().int().nonnegative(),
+  latency: z.record(z.string(), latencyPercentilesSchema),
+});

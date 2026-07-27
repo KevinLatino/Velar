@@ -1,10 +1,14 @@
+import { ForbiddenException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AuthGuard } from '../auth/auth.guard';
+import { InMemoryMetricsRecorder } from './observability/in-memory-metrics';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
+import { METRICS_RECORDER } from './notifications.tokens';
 
 describe('NotificationsController', () => {
   let controller: NotificationsController;
+  let metrics: InMemoryMetricsRecorder;
 
   const mockService = {
     list: jest.fn(),
@@ -22,10 +26,14 @@ describe('NotificationsController', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    metrics = new InMemoryMetricsRecorder();
 
     const mod = await Test.createTestingModule({
       controllers: [NotificationsController],
-      providers: [{ provide: NotificationsService, useValue: mockService }],
+      providers: [
+        { provide: NotificationsService, useValue: mockService },
+        { provide: METRICS_RECORDER, useValue: metrics },
+      ],
     })
       .overrideGuard(AuthGuard)
       .useValue(mockAuthGuard)
@@ -101,6 +109,28 @@ describe('NotificationsController', () => {
       mockService.unarchive.mockResolvedValue({ ok: true });
       await controller.unarchive('n-9', user);
       expect(mockService.unarchive).toHaveBeenCalledWith('n-9', 'user-1');
+    });
+  });
+
+  describe('route: GET /notifications/admin/metrics', () => {
+    it('rejects non-tse/admin roles', () => {
+      expect(() => controller.metricsSnapshot(user)).toThrow(ForbiddenException);
+    });
+
+    it('returns metrics snapshot for tse/admin', () => {
+      metrics.incrementEmitted('bond.activo');
+      metrics.incrementDelivered('in_app');
+      metrics.setDlqDepth(2);
+
+      const snapshot = controller.metricsSnapshot({
+        id: 'admin-1',
+        profile: { role: 'admin' },
+      });
+
+      expect(snapshot.emitted).toEqual({ 'bond.activo': 1 });
+      expect(snapshot.delivered).toEqual({ in_app: 1 });
+      expect(snapshot.dlqDepth).toBe(2);
+      expect(snapshot.rateLimited).toEqual({});
     });
   });
 });

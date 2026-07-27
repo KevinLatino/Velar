@@ -499,18 +499,28 @@ The backend uses the **service_role** Supabase key, which **bypasses RLS**. Ther
 
 ### Rate limiting
 
-Reuse the globally configured **`@nestjs/throttler` `ThrottlerModule`** in `app.module.ts` (`ThrottlerGuard` as `APP_GUARD`). No custom in-memory rate limiter for notification endpoints.
+Reuse the globally configured **`@nestjs/throttler` `ThrottlerModule`** in `app.module.ts` (`ThrottlerGuard` as `APP_GUARD`) for HTTP endpoints. Separately, the outbox dispatcher applies an optional **per-recipient+channel** in-process fixed-window abuse guard (`RateLimiter` / `InMemoryRateLimiter`). When a key is exhausted, the delivery is dead-lettered with `failureReason: 'rate_limited'` (same DLQ as delivery failures) and counted via `incrementRateLimited` rather than `incrementFailed`.
+
+### Payload signing
+
+Outbound email and web-push payloads support optional **HMAC-SHA256** signing via an injectable `PayloadSigner` (`HmacPayloadSigner`). When no signing secret is configured, channels default to `NoopPayloadSigner` so the platform still runs with no external provider credentials.
+
+### Tracing
+
+Tracing is behind a `Tracer` interface with a **no-op default** (`NoopTracer`) — no OpenTelemetry or vendor lock-in. An optional `ConsoleTracer` emits structured debug lines for local debugging.
 
 ### Service Level Indicators (SLIs)
 
 | SLI | Definition |
 |-----|------------|
-| **Delivery success rate** | `delivered / (delivered + dlq)` per channel, rolling window |
-| **Delivery latency** | p50 / p95 / p99 from outbox `occurred_at` to `notification_receipts.delivered_at`, per channel |
-| **DLQ depth** | Count of rows in `notification_dlq` with `failed_at` within window |
-| **Dedup rate** | `deduped / (deduped + delivered)` — indicates duplicate trigger or retry noise |
+| **Delivery success rate** | `delivered / (delivered + failed)` per channel |
+| **Delivery latency** | p50 / p95 / p99 (and avg) per channel from recorded delivery latencies |
+| **DLQ depth** | Current depth reported by `MetricsRecorder.setDlqDepth` |
+| **Dedup rate** | `deduped / (delivered + deduped)` — indicates duplicate trigger or retry noise |
 
-`MetricsRecorder` and `tracing.ts` expose hooks consumed by tests; production wiring to an external backend is out of scope for issue #37.
+`GET /notifications/admin/metrics` (tse/admin only) exposes a live snapshot of these SLIs: emitted (per eventType), delivered / deduped / failed / rateLimited / latency percentiles (per channel), and `dlqDepth`.
+
+`MetricsRecorder` and the `Tracer` hooks are consumed by tests; production wiring to an external metrics/tracing backend is out of scope for issue #37.
 
 ---
 

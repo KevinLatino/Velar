@@ -17,6 +17,7 @@ import {
   type RouteFn,
 } from './dispatcher';
 import { InMemoryOutboxStore } from './in-memory-outbox.store';
+import { InMemoryRateLimiter } from './in-memory-rate-limiter';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Test fakes / helpers
@@ -141,6 +142,8 @@ function buildDispatcher(
     metrics?: InMemoryMetricsRecorder;
     clock?: () => Date;
     sleep?: (ms: number) => Promise<void>;
+    rateLimiter?: DispatcherDeps['rateLimiter'];
+    tracer?: DispatcherDeps['tracer'];
     opts?: Partial<DispatcherOptions>;
   } = {},
 ): {
@@ -177,6 +180,8 @@ function buildDispatcher(
     clock: overrides.clock,
     sleep: overrides.sleep ?? (async () => undefined),
     rng: () => 0,
+    rateLimiter: overrides.rateLimiter,
+    tracer: overrides.tracer,
   };
 
   const opts: DispatcherOptions = {
@@ -440,6 +445,72 @@ describe('OutboxDispatcher', () => {
       expect(digestQueue.items[0].windowKey).toBe('2026-07-01');
       expect(dedup.size()).toBe(0);
       expect(metrics.deliveredCount('in_app')).toBe(0);
+    });
+  });
+
+  describe('per-recipient+channel rate limiting', () => {
+    it('dead-letters excess sends as rate_limited without affecting other recipients', async () => {
+      const outbox = new InMemoryOutboxStore();
+      // 5 events for the limited recipient only.
+      for (let i = 0; i < 5; i++) {
+        outbox.seed([
+          makeEvent({
+            id: `rl-${i}`,
+            dedupKey: `rl-dk-${i}`,
+            aggregateId: 'agg-limited',
+          }),
+        ]);
+      }
+      // Separate event for a different recipient in the same batch.
+      outbox.seed([
+        makeEvent({
+          id: 'rl-other',
+          dedupKey: 'rl-dk-other',
+          aggregateId: 'agg-other',
+        }),
+      ]);
+
+      const channel = new RecordingChannel();
+      const rateLimiter = new InMemoryRateLimiter({
+        maxPerWindow: 2,
+        windowMs: 60_000,
+      });
+
+      const { dispatcher, deadLetter, metrics } = buildDispatcher({
+        outbox,
+        channel,
+        rateLimiter,
+        recipients: new InMemoryRecipientDirectory(
+          new Map([
+            ['agg-limited', ['user-limited']],
+            ['agg-other', ['user-other']],
+          ]),
+        ),
+        opts: { concurrency: 1, maxRetries: 0 },
+      });
+
+      const result = await dispatcher.drainOnce();
+
+      const limitedSent = channel.sent.filter(
+        (n) => n.recipientId === 'user-limited',
+      );
+      const otherSent = channel.sent.filter(
+        (n) => n.recipientId === 'user-other',
+      );
+      expect(limitedSent).toHaveLength(2);
+      expect(otherSent).toHaveLength(1);
+
+      const rateLimitedDlq = deadLetter.entries.filter(
+        (e) => e.failureReason === 'rate_limited',
+      );
+      expect(rateLimitedDlq).toHaveLength(3);
+      expect(rateLimitedDlq.every((e) => e.recipientId === 'user-limited')).toBe(
+        true,
+      );
+      expect(metrics.rateLimitedCount('in_app')).toBe(3);
+      expect(metrics.failedCount('in_app')).toBe(0);
+      expect(result.delivered).toBe(3); // 2 limited + 1 other
+      expect(result.failed).toBe(3);
     });
   });
 });

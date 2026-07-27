@@ -1744,6 +1744,29 @@ export declare const apiContracts: {
             ok: z.ZodLiteral<true>;
         }, z.core.$loose>;
     };
+    readonly 'notifications.admin.metrics': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        auth: boolean;
+        body: z.ZodUndefined;
+        params: z.ZodObject<{}, z.core.$strict>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            emitted: z.ZodRecord<z.ZodString, z.ZodNumber>;
+            delivered: z.ZodRecord<z.ZodString, z.ZodNumber>;
+            deduped: z.ZodRecord<z.ZodString, z.ZodNumber>;
+            failed: z.ZodRecord<z.ZodString, z.ZodNumber>;
+            rateLimited: z.ZodRecord<z.ZodString, z.ZodNumber>;
+            dlqDepth: z.ZodNumber;
+            latency: z.ZodRecord<z.ZodString, z.ZodObject<{
+                p50: z.ZodNumber;
+                p95: z.ZodNumber;
+                p99: z.ZodNumber;
+                avg: z.ZodNumber;
+            }, z.core.$strip>>;
+        }, z.core.$strip>;
+    };
     readonly 'users.me': {
         method: HttpMethod;
         path: string;

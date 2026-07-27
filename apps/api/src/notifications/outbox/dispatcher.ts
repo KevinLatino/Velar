@@ -10,10 +10,13 @@ import type { DedupStore } from '../domain/dedup.interface';
 import type { MetricsRecorder } from '../domain/observability.interface';
 import type { OutboxStore } from '../domain/outbox.interface';
 import type { PreferencesStore } from '../domain/preferences.interface';
+import type { RateLimiter } from '../domain/rate-limiter.interface';
 import type {
   RecipientCandidate,
   RecipientDirectory,
 } from '../domain/recipients.interface';
+import type { Tracer } from '../domain/tracing.interface';
+import { NoopTracer } from '../observability/noop-tracer';
 import { CircuitBreaker } from './circuit-breaker';
 import type { DeadLetterSink } from './dead-letter';
 import { withRetry } from './retry';
@@ -57,6 +60,10 @@ export interface DispatcherDeps {
   /** Injectable for fast tests; defaults to real setTimeout. */
   sleep?: (ms: number) => Promise<void>;
   rng?: () => number;
+  /** Optional; defaults to NoopTracer when not supplied. */
+  tracer?: Tracer;
+  /** Optional per-recipient+channel abuse guard. */
+  rateLimiter?: RateLimiter;
 }
 
 export interface DispatcherOptions {
@@ -100,11 +107,14 @@ class AsyncSemaphore {
 export class OutboxDispatcher {
   private readonly breakers = new Map<string, CircuitBreaker>();
   private dlqDepth = 0;
+  private readonly tracer: Tracer;
 
   constructor(
     private readonly deps: DispatcherDeps,
     private readonly opts: DispatcherOptions,
-  ) {}
+  ) {
+    this.tracer = deps.tracer ?? new NoopTracer();
+  }
 
   private clock(): Date {
     return (this.deps.clock ?? (() => new Date()))();
@@ -246,6 +256,21 @@ export class OutboxDispatcher {
       return 'deduped';
     }
 
+    if (
+      this.deps.rateLimiter &&
+      !this.deps.rateLimiter.tryAcquire(`${recipient.userId}:${channelKind}`)
+    ) {
+      await this.deadLetter(
+        event,
+        recipient.userId,
+        channelKind,
+        rendered,
+        'rate_limited',
+      );
+      this.deps.metrics.incrementRateLimited(channelKind);
+      return 'failed';
+    }
+
     const channel = this.deps.channels[channelKind];
     if (!channel) {
       await this.deadLetter(
@@ -261,6 +286,11 @@ export class OutboxDispatcher {
 
     const breaker = this.breakerFor(channelKind);
     const startedAt = this.clock().getTime();
+    let outcome: 'delivered' | 'failed' = 'failed';
+    const span = this.tracer.startSpan('notification.deliver', {
+      channel: channelKind,
+      eventType: event.eventType,
+    });
 
     try {
       await withRetry(
@@ -312,6 +342,7 @@ export class OutboxDispatcher {
       const latency = this.clock().getTime() - startedAt;
       this.deps.metrics.incrementDelivered(channelKind);
       this.deps.metrics.recordDeliveryLatencyMs(channelKind, latency);
+      outcome = 'delivered';
       return 'delivered';
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
@@ -324,6 +355,8 @@ export class OutboxDispatcher {
       );
       this.deps.metrics.incrementFailed(channelKind);
       return 'failed';
+    } finally {
+      span.end({ outcome });
     }
   }
 

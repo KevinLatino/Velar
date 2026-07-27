@@ -1,4 +1,5 @@
 import type { RenderedNotification } from '@velar/types';
+import { HmacPayloadSigner } from '../security/hmac-payload-signer';
 import {
   WebPushChannel,
   type WebPushProvider,
@@ -61,5 +62,24 @@ describe('WebPushChannel', () => {
       retryable: true,
       error: 'push endpoint down',
     });
+  });
+
+  it('passes a non-empty HMAC signature through to the provider', async () => {
+    let receivedSignature: string | undefined;
+    const provider: WebPushProvider = {
+      async send(_recipientId, _payload, signature) {
+        receivedSignature = signature;
+      },
+    };
+    const channel = new WebPushChannel(
+      provider,
+      new HmacPayloadSigner('test-secret'),
+    );
+
+    await channel.send(sample());
+
+    expect(receivedSignature).toBeDefined();
+    expect(receivedSignature!.length).toBeGreaterThan(0);
+    expect(receivedSignature).toMatch(/^[a-f0-9]{64}$/);
   });
 });

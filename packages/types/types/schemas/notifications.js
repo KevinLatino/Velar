@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.userNotificationPreferencesResponseSchema = exports.digestSettingRequestSchema = exports.quietHoursRequestSchema = exports.channelPreferenceRequestSchema = exports.groupedCountsResponseSchema = exports.bulkReadRequestSchema = exports.inboxResponseSchema = exports.inboxQuerySchema = exports.notificationsResponseSchema = exports.notificationRowSchema = void 0;
+exports.metricsSnapshotResponseSchema = exports.userNotificationPreferencesResponseSchema = exports.digestSettingRequestSchema = exports.quietHoursRequestSchema = exports.channelPreferenceRequestSchema = exports.groupedCountsResponseSchema = exports.bulkReadRequestSchema = exports.inboxResponseSchema = exports.inboxQuerySchema = exports.notificationsResponseSchema = exports.notificationRowSchema = void 0;
 const zod_1 = require("zod");
 const notification_1 = require("../notification");
 const common_1 = require("./common");
@@ -76,4 +76,19 @@ exports.userNotificationPreferencesResponseSchema = zod_1.z.object({
         category: notificationCategorySchema,
         cadence: digestCadenceSchema,
     })),
+});
+const latencyPercentilesSchema = zod_1.z.object({
+    p50: zod_1.z.number(),
+    p95: zod_1.z.number(),
+    p99: zod_1.z.number(),
+    avg: zod_1.z.number(),
+});
+exports.metricsSnapshotResponseSchema = zod_1.z.object({
+    emitted: zod_1.z.record(zod_1.z.string(), zod_1.z.number()),
+    delivered: zod_1.z.record(zod_1.z.string(), zod_1.z.number()),
+    deduped: zod_1.z.record(zod_1.z.string(), zod_1.z.number()),
+    failed: zod_1.z.record(zod_1.z.string(), zod_1.z.number()),
+    rateLimited: zod_1.z.record(zod_1.z.string(), zod_1.z.number()),
+    dlqDepth: zod_1.z.number().int().nonnegative(),
+    latency: zod_1.z.record(zod_1.z.string(), latencyPercentilesSchema),
 });

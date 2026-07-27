@@ -33,6 +33,7 @@ import {
   groupedCountsResponseSchema,
   inboxQuerySchema,
   inboxResponseSchema,
+  metricsSnapshotResponseSchema,
   notificationsResponseSchema,
   quietHoursRequestSchema,
   userNotificationPreferencesResponseSchema,
@@ -147,6 +148,7 @@ export const apiContracts = {
   'notifications.preferences.channels': endpoint({ method: 'PATCH', path: '/notifications/preferences/channels', module: 'notifications', auth: true, body: channelPreferenceRequestSchema, params: noParams, query: noQuery, response: okSchema }),
   'notifications.preferences.quietHours': endpoint({ method: 'PATCH', path: '/notifications/preferences/quiet-hours', module: 'notifications', auth: true, body: quietHoursRequestSchema, params: noParams, query: noQuery, response: okSchema }),
   'notifications.preferences.digest': endpoint({ method: 'PATCH', path: '/notifications/preferences/digest', module: 'notifications', auth: true, body: digestSettingRequestSchema, params: noParams, query: noQuery, response: okSchema }),
+  'notifications.admin.metrics': endpoint({ method: 'GET', path: '/notifications/admin/metrics', module: 'notifications', auth: true, body: noBody, params: noParams, query: noQuery, response: metricsSnapshotResponseSchema }),
 
   'users.me': endpoint({ method: 'GET', path: '/users/me', module: 'users', auth: true, body: noBody, params: noParams, query: noQuery, response: profileRowSchema }),
   'users.updateMe': endpoint({ method: 'PATCH', path: '/users/me', module: 'users', auth: true, body: updateProfileRequestSchema, params: noParams, query: noQuery, response: profileRowSchema }),

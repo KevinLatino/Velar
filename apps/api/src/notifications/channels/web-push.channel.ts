@@ -3,11 +3,14 @@ import type {
   ChannelSendResult,
   NotificationChannel,
 } from '../domain/channel.interface';
+import type { PayloadSigner } from '../domain/signer.interface';
+import { NoopPayloadSigner } from '../security/noop-payload-signer';
 
 export interface WebPushProvider {
   send(
     recipientId: string,
     payload: { title: string; body: string },
+    signature?: string,
   ): Promise<void>;
 }
 
@@ -24,24 +27,43 @@ export class NoopWebPushProvider implements WebPushProvider {
   async send(
     recipientId: string,
     payload: { title: string; body: string },
+    signature?: string,
   ): Promise<void> {
     this.log(
-      `[noop-web-push] to=${recipientId} title=${payload.title} bodyLength=${payload.body.length}`,
+      `[noop-web-push] to=${recipientId} title=${payload.title} bodyLength=${payload.body.length}` +
+        (signature ? ` signature=${signature.slice(0, 8)}…` : ''),
     );
   }
 }
 
 export class WebPushChannel implements NotificationChannel {
   readonly kind = 'web_push' as const;
+  private readonly signer: PayloadSigner;
 
-  constructor(private readonly provider: WebPushProvider) {}
+  constructor(
+    private readonly provider: WebPushProvider,
+    signer?: PayloadSigner,
+  ) {
+    this.signer = signer ?? new NoopPayloadSigner();
+  }
 
   async send(notification: RenderedNotification): Promise<ChannelSendResult> {
     try {
-      await this.provider.send(notification.recipientId, {
-        title: notification.subject,
-        body: notification.body,
-      });
+      const signature = this.signer.sign(
+        JSON.stringify({
+          subject: notification.subject,
+          body: notification.body,
+          recipientId: notification.recipientId,
+        }),
+      );
+      await this.provider.send(
+        notification.recipientId,
+        {
+          title: notification.subject,
+          body: notification.body,
+        },
+        signature,
+      );
       return { ok: true, retryable: false };
     } catch (err) {
       return {

@@ -1,4 +1,5 @@
 import type { RenderedNotification } from '@velar/types';
+import { HmacPayloadSigner } from '../security/hmac-payload-signer';
 import {
   EmailChannel,
   type EmailProvider,
@@ -60,5 +61,24 @@ describe('EmailChannel', () => {
       retryable: true,
       error: 'smtp unavailable',
     });
+  });
+
+  it('passes a non-empty HMAC signature through to the provider', async () => {
+    let receivedSignature: string | undefined;
+    const provider: EmailProvider = {
+      async send(_recipientId, _subject, _html, signature) {
+        receivedSignature = signature;
+      },
+    };
+    const channel = new EmailChannel(
+      provider,
+      new HmacPayloadSigner('test-secret'),
+    );
+
+    await channel.send(sample());
+
+    expect(receivedSignature).toBeDefined();
+    expect(receivedSignature!.length).toBeGreaterThan(0);
+    expect(receivedSignature).toMatch(/^[a-f0-9]{64}$/);
   });
 });

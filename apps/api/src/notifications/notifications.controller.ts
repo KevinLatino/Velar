@@ -1,20 +1,28 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
+  Inject,
   Param,
   Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { NotificationsService } from './notifications.service';
+import { Role } from '@velar/types';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
+import { InMemoryMetricsRecorder } from './observability/in-memory-metrics';
+import { NotificationsService } from './notifications.service';
+import { METRICS_RECORDER } from './notifications.tokens';
 
 @Controller('notifications')
 @UseGuards(AuthGuard)
 export class NotificationsController {
-  constructor(private notifications: NotificationsService) {}
+  constructor(
+    private notifications: NotificationsService,
+    @Inject(METRICS_RECORDER) private metrics: InMemoryMetricsRecorder,
+  ) {}
 
   @Get()
   list(@CurrentUser() user: any) {
@@ -46,6 +54,15 @@ export class NotificationsController {
   @Get('grouped')
   grouped(@CurrentUser() user: any) {
     return this.notifications.groupedCounts(user.id);
+  }
+
+  @Get('admin/metrics')
+  metricsSnapshot(@CurrentUser() user: any) {
+    const role: Role = user.profile?.role;
+    if (!['tse', 'admin'].includes(role)) {
+      throw new ForbiddenException('TSE/Admin only');
+    }
+    return this.metrics.snapshot();
   }
 
   @Patch('read-all')

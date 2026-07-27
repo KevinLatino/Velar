@@ -175,3 +175,17 @@ export declare const userNotificationPreferencesResponseSchema: z.ZodObject<{
         }>;
     }, z.core.$strip>>;
 }, z.core.$strip>;
+export declare const metricsSnapshotResponseSchema: z.ZodObject<{
+    emitted: z.ZodRecord<z.ZodString, z.ZodNumber>;
+    delivered: z.ZodRecord<z.ZodString, z.ZodNumber>;
+    deduped: z.ZodRecord<z.ZodString, z.ZodNumber>;
+    failed: z.ZodRecord<z.ZodString, z.ZodNumber>;
+    rateLimited: z.ZodRecord<z.ZodString, z.ZodNumber>;
+    dlqDepth: z.ZodNumber;
+    latency: z.ZodRecord<z.ZodString, z.ZodObject<{
+        p50: z.ZodNumber;
+        p95: z.ZodNumber;
+        p99: z.ZodNumber;
+        avg: z.ZodNumber;
+    }, z.core.$strip>>;
+}, z.core.$strip>;

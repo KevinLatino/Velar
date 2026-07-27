@@ -1,10 +1,20 @@
 import type { MetricsRecorder } from '../domain/observability.interface';
+import { computeLatencyPercentiles } from './percentiles';
+
+function mapToRecord(map: Map<string, number>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [k, v] of map) {
+    out[k] = v;
+  }
+  return out;
+}
 
 export class InMemoryMetricsRecorder implements MetricsRecorder {
   private readonly emitted = new Map<string, number>();
   private readonly delivered = new Map<string, number>();
   private readonly deduped = new Map<string, number>();
   private readonly failed = new Map<string, number>();
+  private readonly rateLimited = new Map<string, number>();
   private readonly latencyMs = new Map<string, number[]>();
   private _dlqDepth = 0;
 
@@ -22,6 +32,10 @@ export class InMemoryMetricsRecorder implements MetricsRecorder {
 
   incrementFailed(channel: string): void {
     this.failed.set(channel, (this.failed.get(channel) ?? 0) + 1);
+  }
+
+  incrementRateLimited(channel: string): void {
+    this.rateLimited.set(channel, (this.rateLimited.get(channel) ?? 0) + 1);
   }
 
   recordDeliveryLatencyMs(channel: string, ms: number): void {
@@ -50,11 +64,45 @@ export class InMemoryMetricsRecorder implements MetricsRecorder {
     return this.failed.get(channel) ?? 0;
   }
 
+  rateLimitedCount(channel: string): number {
+    return this.rateLimited.get(channel) ?? 0;
+  }
+
   latencies(channel: string): number[] {
     return [...(this.latencyMs.get(channel) ?? [])];
   }
 
   get dlqDepth(): number {
     return this._dlqDepth;
+  }
+
+  snapshot(): {
+    emitted: Record<string, number>;
+    delivered: Record<string, number>;
+    deduped: Record<string, number>;
+    failed: Record<string, number>;
+    rateLimited: Record<string, number>;
+    dlqDepth: number;
+    latency: Record<
+      string,
+      { p50: number; p95: number; p99: number; avg: number }
+    >;
+  } {
+    const latency: Record<
+      string,
+      { p50: number; p95: number; p99: number; avg: number }
+    > = {};
+    for (const [channel, values] of this.latencyMs) {
+      latency[channel] = computeLatencyPercentiles(values);
+    }
+    return {
+      emitted: mapToRecord(this.emitted),
+      delivered: mapToRecord(this.delivered),
+      deduped: mapToRecord(this.deduped),
+      failed: mapToRecord(this.failed),
+      rateLimited: mapToRecord(this.rateLimited),
+      dlqDepth: this._dlqDepth,
+      latency,
+    };
   }
 }
