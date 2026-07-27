@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../common/supabase/supabase.service';
-import { NotificationType } from '@velar/types';
+import { NotificationType, type RenderedNotification } from '@velar/types';
 
 @Injectable()
 export class NotificationsService {
@@ -61,5 +61,27 @@ export class NotificationsService {
       .eq('user_id', userId)
       .eq('read', false);
     return { ok: true };
+  }
+
+  /**
+   * Persists a dispatcher-rendered notification (in-app channel path).
+   * `type` stores `rendered.category` as a schema-safe placeholder — richer
+   * mapping onto NotificationType enum values (offer_received, etc.) happens
+   * when domain events get wired to real recipients in a later phase.
+   */
+  async insertRendered(rendered: RenderedNotification): Promise<void> {
+    await this.supabase.admin.from('notifications').insert({
+      user_id: rendered.recipientId,
+      type: rendered.category,
+      payload: {
+        subject: rendered.subject,
+        body: rendered.body,
+        notificationId: rendered.notificationId,
+      },
+      category: rendered.category,
+      severity: rendered.severity,
+      channel: rendered.channel,
+      idempotency_key: rendered.idempotencyKey,
+    });
   }
 }
