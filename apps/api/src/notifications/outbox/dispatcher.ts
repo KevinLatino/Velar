@@ -159,7 +159,12 @@ export class OutboxDispatcher {
           const decisions = this.deps.route(event, recipient, prefs, now);
 
           for (const decision of decisions) {
-            if (decision.cadence !== 'instant') {
+            // Reuse the digest queue as deferred delivery for both true digests
+            // and quiet-hours-deferred instant decisions (future deliverAt).
+            const isDueNow =
+              decision.cadence === 'instant' &&
+              new Date(decision.deliverAt).getTime() <= now.getTime();
+            if (!isDueNow) {
               const rendered = this.deps.render(event, recipient, decision);
               await this.deps.digestQueue.enqueue(
                 recipient.userId,
