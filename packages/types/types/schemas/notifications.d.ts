@@ -10,6 +10,7 @@ export declare const notificationRowSchema: z.ZodObject<{
         readonly PAYMENT_CONFIRMED: "payment_confirmed";
         readonly BOND_APPROVED: "bond_approved";
         readonly BOND_REJECTED: "bond_rejected";
+        readonly BOND_REQUEST_RECEIVED: "bond_request_received";
         readonly REPORT_SUBMITTED: "report_submitted";
         readonly REPORT_OBSERVED: "report_observed";
         readonly REPORT_APPROVED: "report_approved";
@@ -31,6 +32,7 @@ export declare const notificationsResponseSchema: z.ZodObject<{
             readonly PAYMENT_CONFIRMED: "payment_confirmed";
             readonly BOND_APPROVED: "bond_approved";
             readonly BOND_REJECTED: "bond_rejected";
+            readonly BOND_REQUEST_RECEIVED: "bond_request_received";
             readonly REPORT_SUBMITTED: "report_submitted";
             readonly REPORT_OBSERVED: "report_observed";
             readonly REPORT_APPROVED: "report_approved";

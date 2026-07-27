@@ -100,6 +100,14 @@ export class BondsService {
     }
   }
 
+  private async tseUserIds(): Promise<string[]> {
+    const { data } = await this.supabase.admin
+      .from('profiles')
+      .select('id')
+      .eq('role', 'tse');
+    return (data ?? []).map((p: any) => p.id);
+  }
+
   /** Cuenta (profile emisor) del partido, dueña inicial de los bonos a su nombre. */
   private async partyOwner(partyId: string) {
     const [{ data: owner }, { data: party }] = await Promise.all([
@@ -349,6 +357,19 @@ export class BondsService {
       .select()
       .single();
     if (error) throw new BadRequestException(error.message);
+
+    await this.audit.emit({
+      type: AuditEventType.BOND_REQUEST_CREATED,
+      actorId,
+      payload: { requestId: data.id, partyId, faceValue: input.faceValue },
+    });
+    for (const tseId of await this.tseUserIds()) {
+      await this.notifications.emit(tseId, NotificationType.BOND_REQUEST_RECEIVED, {
+        requestId: data.id,
+        partyId,
+        faceValue: input.faceValue,
+      });
+    }
     return data;
   }
 
