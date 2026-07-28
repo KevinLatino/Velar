@@ -1,6 +1,13 @@
 # Notification Platform Architecture
 
-This document describes the architecture for **issue #37**: an additive expansion of VELAR's existing minimal in-app notification system into an event-driven, multi-channel notification and delivery platform. The design builds on what already ships today—`notifications` table, `NotificationsService`, `NotificationBell` polling—without replacing those code paths. New tables, Postgres triggers, and application-layer pipeline components wrap around domain writes to provide reliable capture, routing, fan-out, retries, and observability. Nothing in this document is implemented yet; it is the design artifact that must land before implementation code.
+This document describes the **as-built architecture** for **issue #37**: an additive expansion of VELAR's existing minimal in-app notification system into an event-driven, multi-channel notification and delivery platform. It was written first as the design artifact; implementation followed it closely (276 backend tests, full frontend inbox/preference center). The design builds on what already ships today—`notifications` table, `NotificationsService`, `NotificationBell` polling—without replacing those code paths. New tables, Postgres triggers, and application-layer pipeline components wrap around domain writes to provide reliable capture, routing, fan-out, retries, and observability.
+
+**Implementation deviations from this design (intentional):**
+
+- **`event_type` strings** use the domain's Spanish status literals (e.g. `bond.congelado`, `transfer.aceptada`, `report.enviado`) rather than the English aliases shown in some trigger examples below—the triggers derive `event_type` as `'<aggregate>.' || NEW.status`.
+- **`DigestQueue.enqueue`** carries an explicit `windowEndsAt` (ISO-8601 end of the digest/quiet-hours window) in addition to the window key.
+- **`notification_digest_queue` table + `DigestCompiler`** were added in a follow-up migration (`20260703000000_notification_digest_queue.sql`) after the original schema section was drafted; see §Schema and §Application-Layer Pipeline.
+- **Audit gap-fills** called out under Explicit Non-Goals were completed during implementation (`requestBond`, `rejectReturn`, `ReportsService.create`/`review`).
 
 ---
 
@@ -258,6 +265,27 @@ Digest cadence per category.
 
 **PK:** `(user_id, category)`
 
+### `notification_digest_queue`
+
+Pending digest items coalesced by the application-layer **`DigestCompiler`** (migration `20260703000000_notification_digest_queue.sql`; not in the original schema draft).
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `id` | `uuid` PK | Row identity |
+| `recipient_id` | `uuid` | Target user |
+| `category` | `text` | Notification category |
+| `window_key` | `text` | Digest window identifier from routing |
+| `window_ends_at` | `timestamptz` | When the window closes; compiler polls `WHERE compiled_at IS NULL AND window_ends_at <= now()` |
+| `rendered_subject` | `text` | Pre-rendered subject for this queued item |
+| `rendered_body` | `text` | Pre-rendered body for this queued item |
+| `channel` | `text` | Intended delivery channel |
+| `created_at` | `timestamptz` DEFAULT `now()` | Enqueue time |
+| `compiled_at` | `timestamptz` NULL | Set when rolled into a digest send |
+
+**RLS:** enabled, **no policy for `authenticated`** — backend-internal, same pattern as `outbox_events`.
+
+**Indexes:** partial `idx_digest_queue_pending` on `(window_ends_at) WHERE compiled_at IS NULL`; `idx_digest_queue_recipient` on `(recipient_id, category, window_key)`.
+
 ### `notification_receipts`
 
 Per-channel delivery audit trail for a notification row.
@@ -312,7 +340,7 @@ The existing boolean `read` column and **`NotificationsService.list` / `markRead
 | Table group | Policy |
 |-------------|--------|
 | **User-facing:** `notification_preferences`, `notification_quiet_hours`, `notification_digest_settings` | Owner-only `FOR ALL TO authenticated` matching `notifications_owner`: `user_id = auth.uid()` for both `USING` and `WITH CHECK` |
-| **Backend-internal:** `outbox_events`, `notification_dedup`, `notification_dlq`, `notification_receipts` | RLS **enabled**, **no policy for `authenticated`** → default deny. Only the backend **service_role** key (which bypasses RLS) may read/write, consistent with `audit_events` and backend-managed `notifications` inserts today |
+| **Backend-internal:** `outbox_events`, `notification_dedup`, `notification_dlq`, `notification_receipts`, `notification_digest_queue` | RLS **enabled**, **no policy for `authenticated`** → default deny. Only the backend **service_role** key (which bypasses RLS) may read/write, consistent with `audit_events` and backend-managed `notifications` inserts today |
 
 Any new policy that checks user role must call **`public.auth_role()`**, not self-referencing subqueries on `profiles`.
 
@@ -375,7 +403,10 @@ apps/api/src/notifications/
 ├── routing/
 │   ├── routing-engine.ts
 │   ├── quiet-hours.ts
-│   └── digest-window.ts
+│   ├── digest-window.ts
+│   ├── digest-compiler.ts
+│   ├── digest-queue-reader.ts
+│   └── postgres-digest-queue.ts
 ├── channels/
 │   ├── in-app.channel.ts
 │   ├── email-digest.channel.ts
@@ -448,7 +479,18 @@ flowchart TD
 
 9. **Mark processed** — After all recipients for an outbox event are handled (or permanently DLQ'd), set `outbox_events.processed_at`.
 
-10. **Digest cadence path** — For `daily` or `weekly` cadence, routing appends the decision to a **digest queue** keyed by `(recipientId, category, digestWindowKey)` instead of delivering immediately. A separate **digest compiler** (also driven by outbox or a timer fake in tests) coalesces queued items per window into one rendered digest notification per recipient per window, then delivers through the same channel/retry/circuit-breaker stack.
+10. **Digest cadence path** — For `daily` or `weekly` cadence, routing appends the decision to a **digest queue** keyed by `(recipientId, category, digestWindowKey)` instead of delivering immediately. `DigestQueue.enqueue()` persists each item to `notification_digest_queue` with `windowEndsAt` set from `RoutingDecision.deliverAt`.
+
+### `DigestCompiler` (`routing/digest-compiler.ts`)
+
+Separate from the outbox dispatcher poll. **`DigestCompiler.compileDue(now)`** (invoked by `DispatcherRunnerService` alongside `OutboxDispatcher.drainOnce()`):
+
+1. Fetches due rows from `notification_digest_queue` via `DigestQueueReader.fetchDue(now)` (`window_ends_at <= now`, `compiled_at IS NULL`).
+2. Groups by `(recipientId, category, windowKey, channel)`.
+3. Renders a coalesced message through template `notification.digest` with the queued subjects as `items`.
+4. Sends via the same `NotificationChannel` stack; on success, `markCompiled()` on the source rows and increments delivery metrics.
+
+Production would also schedule this on an interval (`@nestjs/schedule` or external cron); tests use `InMemoryDigestQueueReader` with no Postgres.
 
 ### Backpressure
 
@@ -544,14 +586,4 @@ This architecture document **does not** propose:
 - Replacing or breaking **`NotificationsService.emit()`**, **`list()`**, **`markRead()`**, or **`markAllRead()`** — signatures and existing behavior stay intact
 - Rewriting any currently-working code path; only **new tables/files** plus **small additive gap-fills**
 
-**Audit gap-fills (later PR slice, not this doc):** Several methods today lack `AuditService.emit()` calls while their siblings in the same file do:
-
-| Method | File | Gap |
-|--------|------|-----|
-| `TransfersService.rejectReturn()` | `transfers.service.ts` | No audit emit (siblings like `approveReturn`, `cancelTransfer` emit) |
-| `ReportsService.create()` / `review()` | `reports.service.ts` | No audit emit (lifecycle service emits for its path) |
-| `BondsService.requestBond()` | `bonds.service.ts` | No audit emit (approve/reject/freeze paths emit) |
-
-Additive `AuditService.emit()` calls will be added in a **follow-up PR**, consistent with the pattern used by sibling methods. That work is **out of scope** for the notification platform design itself.
-
-**This document does not implement anything—it is design-only** and must land before implementation code per issue #37 requirements.
+**Audit gap-fills (completed during #37 implementation):** Additive `AuditService.emit()` calls were added to `BondsService.requestBond()`, `TransfersService.rejectReturn()`, and `ReportsService.create()` / `review()` — matching sibling methods in the same files.
