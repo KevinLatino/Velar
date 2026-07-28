@@ -1,9 +1,5 @@
 import { randomUUID } from 'crypto';
-import type {
-  NotificationCategory,
-  NotificationChannelKind,
-  RenderedNotification,
-} from '@velar/types';
+import type { RenderedNotification } from '@velar/types';
 import type { NotificationChannel } from '../domain/channel.interface';
 import type { MetricsRecorder } from '../domain/observability.interface';
 import type { TemplateEngine } from '../domain/template.interface';
