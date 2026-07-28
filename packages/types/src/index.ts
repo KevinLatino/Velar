@@ -7,6 +7,7 @@ export * from './report';
 export * from './escrow';
 export * from './api';
 export * from './notification';
+export * from './notifications';
 export * from './errors';
 export * from './contracts';
 export * from './contract-model';

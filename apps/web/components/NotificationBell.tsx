@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Bell, CheckCheck } from 'lucide-react';
 import { NotificationType } from '@velar/types';
 import { apiFetch } from '../lib/api';
+import { PollingLiveSource } from '../lib/notifications/live-source';
 import { createClient } from '../lib/supabase/client';
 
 type NotifRow = {
@@ -24,6 +25,7 @@ const LABELS: Record<NotificationType, string> = {
   payment_confirmed: 'Pago confirmado',
   bond_approved: 'Bono aprobado',
   bond_rejected: 'Solicitud de bono rechazada',
+  bond_request_received: 'Nueva solicitud de bono',
   report_submitted: 'Reporte enviado al TSE',
   report_observed: 'Reporte observado por el TSE',
   report_approved: 'Reporte aprobado',
@@ -137,13 +139,22 @@ export function NotificationBell({ role, panelAlign = 'right' }: NotificationBel
 
   useEffect(() => {
     if (!token) return;
-    const runLoad = () => {
-      void load();
-    };
-    runLoad();
-    const id = setInterval(runLoad, 30_000);
-    return () => clearInterval(id);
-  }, [token, load]);
+    const source = new PollingLiveSource(async () => {
+      const data = await apiFetch(token, 'GET', '/notifications') as {
+        notifications: NotifRow[];
+        unreadCount: number;
+      };
+      const notifications = data.notifications ?? [];
+      setNotifications(notifications);
+      return {
+        unreadCount: data.unreadCount ?? 0,
+        latestId: notifications[0]?.id ?? null,
+      };
+    });
+    return source.subscribe((event) => {
+      setUnreadCount(event.unreadCount);
+    });
+  }, [token]);
 
   useEffect(() => {
     if (!open || !token) return;
@@ -233,7 +244,10 @@ export function NotificationBell({ role, panelAlign = 'right' }: NotificationBel
       >
         <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-white bg-error px-1 text-[9px] font-bold leading-none text-white">
+          <span
+            aria-live="polite"
+            className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-white bg-error px-1 text-[9px] font-bold leading-none text-white"
+          >
             {badgeLabel}
           </span>
         )}
@@ -282,6 +296,19 @@ export function NotificationBell({ role, panelAlign = 'right' }: NotificationBel
                 </button>
               ))
             )}
+          </div>
+
+          <div className="border-t border-outline-variant/20 px-4 py-3">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                router.push('/notificaciones');
+              }}
+              className="w-full text-center text-sm font-medium text-primary transition hover:text-primary-container"
+            >
+              Ver todas
+            </button>
           </div>
         </div>,
         document.body,

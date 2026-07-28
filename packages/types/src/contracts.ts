@@ -26,7 +26,18 @@ import {
   paramsTokenIdSchema,
   successSchema,
 } from './schemas/common';
-import { notificationsResponseSchema } from './schemas/notifications';
+import {
+  bulkReadRequestSchema,
+  channelPreferenceRequestSchema,
+  digestSettingRequestSchema,
+  groupedCountsResponseSchema,
+  inboxQuerySchema,
+  inboxResponseSchema,
+  metricsSnapshotResponseSchema,
+  notificationsResponseSchema,
+  quietHoursRequestSchema,
+  userNotificationPreferencesResponseSchema,
+} from './schemas/notifications';
 import { createReportRequestSchema, reportRowSchema, reviewReportRequestSchema } from './schemas/reports';
 import {
   counterOfferRequestSchema,
@@ -126,8 +137,18 @@ export const apiContracts = {
   'reports.review': endpoint({ method: 'PATCH', path: '/reports/:id/review', module: 'reports', auth: true, body: reviewReportRequestSchema, params: paramsIdSchema, query: noQuery, response: reportRowSchema }),
 
   'notifications.list': endpoint({ method: 'GET', path: '/notifications', module: 'notifications', auth: true, body: noBody, params: noParams, query: noQuery, response: notificationsResponseSchema }),
+  'notifications.inbox': endpoint({ method: 'GET', path: '/notifications/inbox', module: 'notifications', auth: true, body: noBody, params: noParams, query: inboxQuerySchema, response: inboxResponseSchema }),
+  'notifications.grouped': endpoint({ method: 'GET', path: '/notifications/grouped', module: 'notifications', auth: true, body: noBody, params: noParams, query: noQuery, response: groupedCountsResponseSchema }),
   'notifications.readAll': endpoint({ method: 'PATCH', path: '/notifications/read-all', module: 'notifications', auth: true, body: noBody, params: noParams, query: noQuery, response: okSchema }),
+  'notifications.bulkRead': endpoint({ method: 'PATCH', path: '/notifications/bulk-read', module: 'notifications', auth: true, body: bulkReadRequestSchema, params: noParams, query: noQuery, response: okSchema }),
   'notifications.read': endpoint({ method: 'PATCH', path: '/notifications/:id/read', module: 'notifications', auth: true, body: noBody, params: paramsIdSchema, query: noQuery, response: okSchema }),
+  'notifications.archive': endpoint({ method: 'PATCH', path: '/notifications/:id/archive', module: 'notifications', auth: true, body: noBody, params: paramsIdSchema, query: noQuery, response: okSchema }),
+  'notifications.unarchive': endpoint({ method: 'PATCH', path: '/notifications/:id/unarchive', module: 'notifications', auth: true, body: noBody, params: paramsIdSchema, query: noQuery, response: okSchema }),
+  'notifications.preferences.get': endpoint({ method: 'GET', path: '/notifications/preferences', module: 'notifications', auth: true, body: noBody, params: noParams, query: noQuery, response: userNotificationPreferencesResponseSchema }),
+  'notifications.preferences.channels': endpoint({ method: 'PATCH', path: '/notifications/preferences/channels', module: 'notifications', auth: true, body: channelPreferenceRequestSchema, params: noParams, query: noQuery, response: okSchema }),
+  'notifications.preferences.quietHours': endpoint({ method: 'PATCH', path: '/notifications/preferences/quiet-hours', module: 'notifications', auth: true, body: quietHoursRequestSchema, params: noParams, query: noQuery, response: okSchema }),
+  'notifications.preferences.digest': endpoint({ method: 'PATCH', path: '/notifications/preferences/digest', module: 'notifications', auth: true, body: digestSettingRequestSchema, params: noParams, query: noQuery, response: okSchema }),
+  'notifications.admin.metrics': endpoint({ method: 'GET', path: '/notifications/admin/metrics', module: 'notifications', auth: true, body: noBody, params: noParams, query: noQuery, response: metricsSnapshotResponseSchema }),
 
   'users.me': endpoint({ method: 'GET', path: '/users/me', module: 'users', auth: true, body: noBody, params: noParams, query: noQuery, response: profileRowSchema }),
   'users.updateMe': endpoint({ method: 'PATCH', path: '/users/me', module: 'users', auth: true, body: updateProfileRequestSchema, params: noParams, query: noQuery, response: profileRowSchema }),

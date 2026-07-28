@@ -393,3 +393,87 @@ Galería viva en **`/design-system`** (cada variante + estado).
   exportado en `index.ts`, y agregado a `/design-system`.
 - Nuevo token → declaralo en `globals.css` (con override dark/país si aplica) **y** en `tokens.ts`
   con el mismo nombre. No dejes valores que puedan divergir.
+
+## 15. Bandeja de notificaciones y centro de preferencias (issue #37)
+
+Rutas nuevas en `apps/web/app/`:
+
+| Ruta | Archivo | Qué es |
+|---|---|---|
+| `/notificaciones` | `app/notificaciones/page.tsx` | Bandeja completa: filtros, búsqueda, paginación, bulk read, archivar |
+| `/configuracion/notificaciones` | `app/configuracion/notificaciones/page.tsx` | Centro de preferencias por categoría/canal, quiet hours, digest |
+
+Helpers: `lib/notifications/inbox-query.ts` (`buildInboxQueryString`), `lib/notifications/live-source.ts`.
+
+### API — bandeja
+
+**`GET /notifications/inbox`** — query params (todos opcionales salvo auth):
+
+| Param | Valores | Notas |
+|---|---|---|
+| `category` | `bond` \| `transfer` \| `payment` \| `report` \| `escrow` \| `system` | |
+| `severity` | `info` \| `warning` \| `critical` | |
+| `read` | `true` \| `false` | |
+| `archived` | `true` \| `false` | Default implícito: solo no archivadas |
+| `search` | string | Busca en `payload.subject` / `payload.body` |
+| `cursor` | string | Cursor opaco de keyset pagination |
+| `limit` | 1–100 | Default 20 |
+
+Respuesta: `{ notifications: NotificationRow[], nextCursor: string | null }`. Paginación keyset por `(created_at DESC, id DESC)`: si hay más filas, `nextCursor` codifica el último par `(created_at, id)` del lote; pasarlo en la siguiente request para infinite scroll.
+
+**`GET /notifications/grouped`** — `{ [category: string]: number }` con conteos de notificaciones activas (no archivadas) por categoría.
+
+**Mutaciones:**
+
+- `PATCH /notifications/bulk-read` — body `{ ids: string[] }` (1–200 ids).
+- `PATCH /notifications/:id/archive` · `PATCH /notifications/:id/unarchive`
+- Legacy (sigue vigente): `GET /notifications`, `PATCH /notifications/:id/read`, `PATCH /notifications/read-all`.
+
+### API — preferencias
+
+**`GET /notifications/preferences`** → `{ userId, channelPreferences[], quietHours | null, digestSettings[] }`.
+
+**`PATCH /notifications/preferences/channels`** — body estricto:
+
+```json
+{ "category": "transfer", "channel": "in_app", "enabled": true }
+```
+
+`channel`: `in_app` \| `email` \| `web_push`. `category`: `bond` \| `transfer` \| `payment` \| `report` \| `escrow` \| `system`.
+
+**`PATCH /notifications/preferences/quiet-hours`** — body:
+
+```json
+{ "timezone": "America/Costa_Rica", "startMinute": 1320, "endMinute": 480, "days": [0,1,2,3,4,5,6] }
+```
+
+`days`: 0 = domingo … 6 = sábado (convención `Date.getDay()`).
+
+**`PATCH /notifications/preferences/digest`** — body:
+
+```json
+{ "category": "report", "cadence": "daily" }
+```
+
+`cadence`: `instant` \| `daily` \| `weekly`.
+
+Schemas compartidos: `packages/types/src/schemas/notifications.ts`.
+
+### Badge en vivo (`live-source.ts`)
+
+Abstracción `NotificationLiveSource` con `{ unreadCount, latestId }`:
+
+- **`PollingLiveSource`** — producción hoy: poll cada 30s vía fetcher inyectado (misma idea que el bell legacy). Fallos de red se ignoran para no romper el chrome.
+- **`InMemoryLiveSource`** — fake síncrono para tests/demos (`push()` notifica suscriptores).
+
+No hay WebSocket cableado en el frontend ni en el backend gateway; el badge es **polling honesto** hasta que alguien conecte `WebSocketRealtimeTransport` (ver `docs/BACKEND.md` §10).
+
+### Comprobación local sin credenciales
+
+```bash
+npm run build --workspace @velar/types
+npm run test --workspace apps/web
+npm run build --workspace apps/web
+```
+
+Las pruebas de `lib/notifications/*.spec.ts` son puras; no requieren Supabase ni API live.
