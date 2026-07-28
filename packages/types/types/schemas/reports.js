@@ -3,7 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.reportRowSchema = exports.reviewReportRequestSchema = exports.createReportRequestSchema = exports.reportStatusSchema = void 0;
 const zod_1 = require("zod");
 const common_1 = require("./common");
-exports.reportStatusSchema = zod_1.z.enum(['enviado', 'revisado', 'observado', 'aprobado']);
+exports.reportStatusSchema = zod_1.z.enum([
+    'enviado',
+    'revisado',
+    'observado',
+    'aprobado',
+    'rechazado',
+    'pendiente_segunda_aprobacion',
+]);
 exports.createReportRequestSchema = zod_1.z.object({
     title: common_1.requiredStringSchema.max(200),
     description: common_1.requiredStringSchema.max(5000),
@@ -13,8 +20,9 @@ exports.createReportRequestSchema = zod_1.z.object({
     total_amount: common_1.positiveNumberSchema.optional(),
 }).strict().refine((value) => !value.period_start || !value.period_end || value.period_end >= value.period_start, { path: ['period_end'], message: 'validation.date' });
 exports.reviewReportRequestSchema = zod_1.z.object({
-    status: zod_1.z.enum(['revisado', 'observado', 'aprobado'], { error: 'validation.enum' }),
+    status: zod_1.z.enum(['revisado', 'observado', 'aprobado', 'rechazado'], { error: 'validation.enum' }),
     notes: zod_1.z.string().trim().max(2000).optional(),
+    expectedVersion: zod_1.z.number().int().nonnegative().optional(),
 }).strict();
 exports.reportRowSchema = zod_1.z.object({
     id: common_1.idSchema,

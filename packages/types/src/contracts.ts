@@ -18,6 +18,7 @@ import {
 } from './schemas/bonds';
 import {
   emptyObjectSchema,
+  idSchema,
   okSchema,
   paginatedSchema,
   paginationQuerySchema,
@@ -124,6 +125,7 @@ export const apiContracts = {
   'reports.create': endpoint({ method: 'POST', path: '/reports', module: 'reports', auth: true, body: createReportRequestSchema, params: noParams, query: noQuery, response: reportRowSchema }),
   'reports.get': endpoint({ method: 'GET', path: '/reports/:id', module: 'reports', auth: true, body: noBody, params: paramsIdSchema, query: noQuery, response: reportRowSchema }),
   'reports.review': endpoint({ method: 'PATCH', path: '/reports/:id/review', module: 'reports', auth: true, body: reviewReportRequestSchema, params: paramsIdSchema, query: noQuery, response: reportRowSchema }),
+  'reports.assign': endpoint({ method: 'PATCH', path: '/reports/:id/assign', module: 'reports', auth: true, body: z.object({ reviewerId: idSchema }).strict(), params: paramsIdSchema, query: noQuery, response: reportRowSchema }),
 
   'notifications.list': endpoint({ method: 'GET', path: '/notifications', module: 'notifications', auth: true, body: noBody, params: noParams, query: noQuery, response: notificationsResponseSchema }),
   'notifications.readAll': endpoint({ method: 'PATCH', path: '/notifications/read-all', module: 'notifications', auth: true, body: noBody, params: noParams, query: noQuery, response: okSchema }),

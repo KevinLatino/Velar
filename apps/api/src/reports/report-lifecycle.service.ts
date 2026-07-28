@@ -17,6 +17,10 @@ import {
 } from './files/file-validation';
 import { reconcile, declaredRefsFromLineItems } from './domain/reconciliation';
 import { resolveSubmit, isEditable } from './domain/workflow';
+import { computeCompliance } from './domain/deadlines';
+import { evaluate } from './rules/engine';
+import { DEFAULT_RULE_SET_VERSION } from './rules/rule-sets';
+import { backtest } from './rules/backtest';
 import {
   AuditEventType,
   NotificationType,
@@ -30,6 +34,12 @@ import {
   ReportSnapshot,
   HeldBond,
   MonthlyReport,
+  RuleEvalResult,
+  ChainedAuditEvent,
+  ChainVerificationResult,
+  RuleSetVersion,
+  HistoricalReportFixture,
+  BacktestResult,
 } from '@velar/types';
 
 const PARTY_ROLE: Role = 'emisor';
@@ -465,6 +475,88 @@ export class ReportLifecycleService {
       versions: versions.map(mapVersion),
       reconciliation: reconcile(declaredRefsFromLineItems(mappedItems), held),
     };
+  }
+
+  // ── Rules / audit-chain / backtesting (#41) ────────────────────────────────
+  private async getDeadlineConfig(): Promise<{ dueDayOfMonth: number; graceDays: number }> {
+    const { data, error } = await this.supabase.admin
+      .from('report_deadlines')
+      .select('due_day_of_month, grace_days')
+      .eq('country_code', 'GLOBAL')
+      .single();
+    if (error || !data) {
+      return { dueDayOfMonth: 15, graceDays: 5 };
+    }
+    return {
+      dueDayOfMonth: data.due_day_of_month,
+      graceDays: data.grace_days,
+    };
+  }
+
+  async getFindings(
+    reportId: string,
+    partyId: string | null,
+    role: Role,
+  ): Promise<RuleEvalResult> {
+    const report = await this.loadReportRow(reportId);
+    if (!AUTHORITY.includes(role)) this.assertOwner(report, partyId);
+
+    const reconciliation = await this.reconcileReport(report);
+    const declaredTotal = computeTotal(
+      (await this.getLineItemRows(reportId)).map(mapLineItem),
+    );
+    const deadlineConfig = await this.getDeadlineConfig();
+    const now = new Date().toISOString();
+    const compliance = computeCompliance({
+      periodYear: report.period_year,
+      periodMonth: report.period_month,
+      config: deadlineConfig,
+      submittedAt: report.submitted_at ?? null,
+      now,
+    });
+
+    const result = evaluate(
+      { reconciliation, compliance, declaredTotal },
+      DEFAULT_RULE_SET_VERSION,
+      now,
+    );
+
+    try {
+      await this.supabase.admin.from('rule_evaluations').insert({
+        report_id: reportId,
+        rule_set_version: result.ruleSetVersion,
+        findings: result.findings,
+        overall_severity: result.overallSeverity,
+        evaluated_at: now,
+        evaluated_by: null,
+      });
+    } catch {
+      // Audit-trail side-effect; do not block returning the evaluation result.
+    }
+
+    return result;
+  }
+
+  async getAuditChain(
+    reportId: string,
+    partyId: string | null,
+    role: Role,
+  ): Promise<{ events: ChainedAuditEvent[]; verification: ChainVerificationResult }> {
+    const report = await this.loadReportRow(reportId);
+    if (!AUTHORITY.includes(role)) this.assertOwner(report, partyId);
+    return this.audit.getReportAuditTrail(reportId);
+  }
+
+  async backtestRules(
+    baselineVersion: RuleSetVersion,
+    candidateVersion: RuleSetVersion,
+    fixtures: HistoricalReportFixture[],
+    role: Role,
+  ): Promise<BacktestResult> {
+    if (role !== 'admin') {
+      throw new ForbiddenException('Solo un admin puede ejecutar backtesting de reglas');
+    }
+    return backtest(baselineVersion, candidateVersion, fixtures);
   }
 }
 

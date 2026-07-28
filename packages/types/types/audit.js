@@ -30,4 +30,11 @@ exports.AuditEventType = {
     REPORT_OBSERVED: 'report_observed',
     REPORT_APPROVED: 'report_approved',
     REPORT_FILE_UPLOADED: 'report_file_uploaded',
+    REPORT_REJECTED: 'report_rejected',
+    REPORT_ASSIGNED: 'report_assigned',
+    REPORT_PENDING_SECOND_APPROVAL: 'report_pending_second_approval',
+    REPORT_SECOND_APPROVED: 'report_second_approved',
+    REPORT_SLA_ESCALATED: 'report_sla_escalated',
+    REPORT_EXPORTED: 'report_exported',
+    REPORT_MARKED_REVIEWED: 'report_marked_reviewed',
 };

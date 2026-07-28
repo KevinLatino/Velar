@@ -1,7 +1,14 @@
 import { z } from 'zod';
 import { idSchema, isoDateSchema, positiveNumberSchema, requiredStringSchema } from './common';
 
-export const reportStatusSchema = z.enum(['enviado', 'revisado', 'observado', 'aprobado']);
+export const reportStatusSchema = z.enum([
+  'enviado',
+  'revisado',
+  'observado',
+  'aprobado',
+  'rechazado',
+  'pendiente_segunda_aprobacion',
+]);
 
 export const createReportRequestSchema = z.object({
   title: requiredStringSchema.max(200),
@@ -16,8 +23,9 @@ export const createReportRequestSchema = z.object({
 );
 
 export const reviewReportRequestSchema = z.object({
-  status: z.enum(['revisado', 'observado', 'aprobado'], { error: 'validation.enum' }),
+  status: z.enum(['revisado', 'observado', 'aprobado', 'rechazado'], { error: 'validation.enum' }),
   notes: z.string().trim().max(2000).optional(),
+  expectedVersion: z.number().int().nonnegative().optional(),
 }).strict();
 
 export const reportRowSchema = z.object({
@@ -39,4 +47,5 @@ export const reportRowSchema = z.object({
 }).passthrough();
 
 export type CreateReportRequest = z.input<typeof createReportRequestSchema>;
+export type ReviewReportRequest = z.input<typeof reviewReportRequestSchema>;
 export type ReportRow = z.output<typeof reportRowSchema>;

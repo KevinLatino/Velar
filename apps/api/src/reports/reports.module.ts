@@ -8,9 +8,10 @@ import { SupabaseModule } from '../common/supabase/supabase.module';
 import { AuditModule } from '../audit/audit.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AuthModule } from '../auth/auth.module';
+import { AbacModule } from '../auth/abac/abac.module';
 
 @Module({
-  imports: [SupabaseModule, AuditModule, NotificationsModule, AuthModule],
+  imports: [SupabaseModule, AuditModule, NotificationsModule, AuthModule, AbacModule],
   controllers: [ReportsController, ReportLifecycleController],
   providers: [
     ReportsService,

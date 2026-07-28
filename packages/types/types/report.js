@@ -15,10 +15,15 @@ exports.ComplianceStatus = exports.DiscrepancyType = exports.FileScanStatus = ex
 // ---------------------------------------------------------------------------
 /**
  * Ciclo legal del reporte:
- *   borrador → enviado → en_revision → observado → reenviado → (en_revision) → aprobado
+ *   borrador → enviado → en_revision → observado → reenviado → (en_revision)
+ *   en_revision → observado | aprobado | rechazado
  *
- * `aprobado` es terminal. `observado` es la vía de corrección: el partido
- * reenvía (nueva versión) y vuelve a revisión.
+ * Desde `en_revision`, un reporte de alto valor puede pasar a
+ * `pendiente_segunda_aprobacion` (doble control) tras la primera aprobación
+ * calificada; un segundo aprobador distinto lo finaliza a `aprobado`.
+ *
+ * `aprobado` y `rechazado` son terminales. `observado` es la vía de corrección:
+ * el partido reenvía (nueva versión) y vuelve a revisión.
  */
 exports.ReportStatus = {
     BORRADOR: 'borrador',
@@ -26,7 +31,9 @@ exports.ReportStatus = {
     EN_REVISION: 'en_revision',
     OBSERVADO: 'observado',
     REENVIADO: 'reenviado',
+    PENDIENTE_SEGUNDA_APROBACION: 'pendiente_segunda_aprobacion',
     APROBADO: 'aprobado',
+    RECHAZADO: 'rechazado',
 };
 /** Estados en los que el partido todavía puede editar el borrador/corregir. */
 exports.EDITABLE_REPORT_STATUSES = [

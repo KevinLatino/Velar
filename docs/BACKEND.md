@@ -366,6 +366,31 @@ Se reemplaza por ClamAV/VirusTotal sin tocar el resto del módulo.
 El TSE (revisión/observación/aprobación) es un **epic aparte**; este issue cubre el
 lado del partido y el dominio compartido de reporte/conciliación.
 
+### TSE governance layer (issue #41)
+
+Capa de gobernanza del TSE sobre el ciclo de vida del reporte: workflow formal con
+doble control y concurrencia optimista, motor de reglas, ABAC, audit log encadenado,
+SLA/escalamiento, analytics de cumplimiento y exports con evidencia de integridad.
+**Solo backend** — sin frontend de command center en este PR. Diseño completo:
+`docs/TSE_GOVERNANCE_ARCHITECTURE.md`.
+
+Endpoints nuevos o extendidos:
+
+```
+PATCH  /api/reports/:id/review          (extendido: expectedVersion, dual control, rechazado)
+PATCH  /api/reports/:id/assign          (admin: asignar revisor)
+GET    /api/reports/lifecycle/:id/findings
+GET    /api/reports/lifecycle/:id/audit-chain
+POST   /api/reports/lifecycle/rules/backtest   (admin)
+POST   /api/sla/check                          (admin)
+GET    /api/compliance-analytics/overview
+GET    /api/compliance-analytics/by-party
+GET    /api/compliance-analytics/reviewer-workload
+GET    /api/compliance-analytics/forecast
+GET    /api/reports/exports/decisions.csv
+GET    /api/reports/exports/decisions.pdf
+```
+
 ## 9. Procedencia y trazabilidad: reconstrucción de historia + integridad (issue #36)
 
 Reconstruye la **historia verificada** de un bono a partir de la bitácora

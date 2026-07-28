@@ -1,9 +1,11 @@
 import { z } from 'zod';
 export declare const reportStatusSchema: z.ZodEnum<{
     aprobado: "aprobado";
+    rechazado: "rechazado";
     enviado: "enviado";
     revisado: "revisado";
     observado: "observado";
+    pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
 }>;
 export declare const createReportRequestSchema: z.ZodObject<{
     title: z.ZodString;
@@ -16,10 +18,12 @@ export declare const createReportRequestSchema: z.ZodObject<{
 export declare const reviewReportRequestSchema: z.ZodObject<{
     status: z.ZodEnum<{
         aprobado: "aprobado";
+        rechazado: "rechazado";
         revisado: "revisado";
         observado: "observado";
     }>;
     notes: z.ZodOptional<z.ZodString>;
+    expectedVersion: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strict>;
 export declare const reportRowSchema: z.ZodObject<{
     id: z.ZodString;
@@ -33,9 +37,11 @@ export declare const reportRowSchema: z.ZodObject<{
     total_amount: z.ZodNullable<z.ZodCoercedNumber<unknown>>;
     status: z.ZodEnum<{
         aprobado: "aprobado";
+        rechazado: "rechazado";
         enviado: "enviado";
         revisado: "revisado";
         observado: "observado";
+        pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
     }>;
     reviewed_by: z.ZodNullable<z.ZodString>;
     reviewed_at: z.ZodNullable<z.ZodString>;
@@ -44,4 +50,5 @@ export declare const reportRowSchema: z.ZodObject<{
     updated_at: z.ZodString;
 }, z.core.$loose>;
 export type CreateReportRequest = z.input<typeof createReportRequestSchema>;
+export type ReviewReportRequest = z.input<typeof reviewReportRequestSchema>;
 export type ReportRow = z.output<typeof reportRowSchema>;

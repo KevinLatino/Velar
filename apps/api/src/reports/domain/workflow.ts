@@ -3,20 +3,34 @@
  *
  * Ciclo legal:
  *   borrador → enviado → en_revision → observado → reenviado → en_revision → aprobado
+ *   en_revision → pendiente_segunda_aprobacion → aprobado  (dual control, alto monto)
+ *   en_revision → rechazado  (terminal)
  *
- * `aprobado` es terminal. Solo se permiten transiciones declaradas aquí; el
- * service las usa para rechazar cambios de estado ilegales antes de tocar la DB.
+ * `aprobado` y `rechazado` son terminales. Solo se permiten transiciones
+ * declaradas aquí; el service las usa para rechazar cambios de estado ilegales
+ * antes de tocar la DB.
  */
 import { EDITABLE_REPORT_STATUSES, ReportStatus } from '@velar/types';
 
 /** Transiciones legales por estado de origen. */
-const TRANSITIONS: Record<string, ReportStatus[]> = {
+export const TRANSITIONS: Record<string, ReportStatus[]> = {
   [ReportStatus.BORRADOR]: [ReportStatus.ENVIADO],
   [ReportStatus.ENVIADO]: [ReportStatus.EN_REVISION],
-  [ReportStatus.EN_REVISION]: [ReportStatus.OBSERVADO, ReportStatus.APROBADO],
+  [ReportStatus.EN_REVISION]: [
+    ReportStatus.OBSERVADO,
+    ReportStatus.APROBADO,
+    ReportStatus.RECHAZADO,
+    ReportStatus.PENDIENTE_SEGUNDA_APROBACION,
+  ],
   [ReportStatus.OBSERVADO]: [ReportStatus.REENVIADO],
   [ReportStatus.REENVIADO]: [ReportStatus.EN_REVISION],
+  [ReportStatus.PENDIENTE_SEGUNDA_APROBACION]: [
+    ReportStatus.APROBADO,
+    ReportStatus.OBSERVADO,
+    ReportStatus.RECHAZADO,
+  ],
   [ReportStatus.APROBADO]: [],
+  [ReportStatus.RECHAZADO]: [],
   // Compat: estado legacy 'revisado' del módulo original se trata como en_revision.
   revisado: [ReportStatus.OBSERVADO, ReportStatus.APROBADO],
 };
@@ -72,4 +86,65 @@ export function resolveSubmit(current: ReportStatus): {
     return { next: ReportStatus.REENVIADO, isResubmission: true };
   }
   throw new Error(`No se puede enviar un reporte en estado "${current}"`);
+}
+
+export interface DecisionContext {
+  /** Total declarado del reporte (suma de line items), usado para el umbral de dual control. */
+  declaredTotal: number;
+  /** Umbral de monto a partir del cual una aprobación requiere doble control. */
+  dualControlThreshold: number;
+}
+
+export interface DecisionResolution {
+  next: ReportStatus;
+  /** true si esta decisión crea un nuevo estado pendiente de segunda aprobación. */
+  requiresSecondApproval: boolean;
+  /** true si esta decisión es la segunda aprobación que cierra el dual control. */
+  isSecondApproval: boolean;
+}
+
+/**
+ * Resuelve el efecto de una decisión de revisión del TSE (aprobar/observar/rechazar),
+ * intercalando la guarda de dual control sobre la aprobación de reportes de alto monto:
+ *  - en_revision, aprobar, monto >= umbral        → pendiente_segunda_aprobacion (requiresSecondApproval)
+ *  - en_revision, aprobar, monto <  umbral        → aprobado (directo)
+ *  - pendiente_segunda_aprobacion, aprobar        → aprobado (isSecondApproval, cierra el dual control)
+ *  - cualquier otro par (from, requested) legal    → se resuelve por TRANSITIONS tal cual
+ * Lanza InvalidTransitionError si la transición no es legal.
+ */
+export function resolveDecision(
+  current: ReportStatus,
+  requested: ReportStatus,
+  ctx: DecisionContext,
+): DecisionResolution {
+  if (requested === ReportStatus.APROBADO) {
+    if (current === ReportStatus.EN_REVISION) {
+      const next =
+        ctx.declaredTotal >= ctx.dualControlThreshold
+          ? ReportStatus.PENDIENTE_SEGUNDA_APROBACION
+          : ReportStatus.APROBADO;
+      assertTransition(current, next);
+      return {
+        next,
+        requiresSecondApproval: next === ReportStatus.PENDIENTE_SEGUNDA_APROBACION,
+        isSecondApproval: false,
+      };
+    }
+
+    if (current === ReportStatus.PENDIENTE_SEGUNDA_APROBACION) {
+      assertTransition(current, ReportStatus.APROBADO);
+      return {
+        next: ReportStatus.APROBADO,
+        requiresSecondApproval: false,
+        isSecondApproval: true,
+      };
+    }
+  }
+
+  assertTransition(current, requested);
+  return {
+    next: requested,
+    requiresSecondApproval: false,
+    isSecondApproval: false,
+  };
 }

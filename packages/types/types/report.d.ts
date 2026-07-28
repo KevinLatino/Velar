@@ -9,10 +9,15 @@
  */
 /**
  * Ciclo legal del reporte:
- *   borrador → enviado → en_revision → observado → reenviado → (en_revision) → aprobado
+ *   borrador → enviado → en_revision → observado → reenviado → (en_revision)
+ *   en_revision → observado | aprobado | rechazado
  *
- * `aprobado` es terminal. `observado` es la vía de corrección: el partido
- * reenvía (nueva versión) y vuelve a revisión.
+ * Desde `en_revision`, un reporte de alto valor puede pasar a
+ * `pendiente_segunda_aprobacion` (doble control) tras la primera aprobación
+ * calificada; un segundo aprobador distinto lo finaliza a `aprobado`.
+ *
+ * `aprobado` y `rechazado` son terminales. `observado` es la vía de corrección:
+ * el partido reenvía (nueva versión) y vuelve a revisión.
  */
 export declare const ReportStatus: {
     readonly BORRADOR: "borrador";
@@ -20,7 +25,9 @@ export declare const ReportStatus: {
     readonly EN_REVISION: "en_revision";
     readonly OBSERVADO: "observado";
     readonly REENVIADO: "reenviado";
+    readonly PENDIENTE_SEGUNDA_APROBACION: "pendiente_segunda_aprobacion";
     readonly APROBADO: "aprobado";
+    readonly RECHAZADO: "rechazado";
 };
 export type ReportStatus = (typeof ReportStatus)[keyof typeof ReportStatus];
 /** Estados en los que el partido todavía puede editar el borrador/corregir. */
