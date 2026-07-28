@@ -13,7 +13,6 @@ exports.NotificationType = {
     PAYMENT_CONFIRMED: 'payment_confirmed',
     BOND_APPROVED: 'bond_approved',
     BOND_REJECTED: 'bond_rejected',
-    BOND_REQUEST_RECEIVED: 'bond_request_received',
     REPORT_SUBMITTED: 'report_submitted',
     REPORT_OBSERVED: 'report_observed',
     REPORT_APPROVED: 'report_approved',

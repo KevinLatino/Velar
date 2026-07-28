@@ -20,7 +20,6 @@ export declare const AuditEventType: {
     readonly PARTY_CREATED: "party_created";
     readonly WALLET_PROVISIONED: "wallet_provisioned";
     readonly BOND_PUBLISHED: "bond_published";
-    readonly BOND_REQUEST_CREATED: "bond_request_created";
     readonly COUNTER_OFFER_SENT: "counter_offer_sent";
     readonly REPORT_SUBMITTED: "report_submitted";
     readonly REPORT_RESUBMITTED: "report_resubmitted";

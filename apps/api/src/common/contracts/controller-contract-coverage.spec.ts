@@ -4,12 +4,11 @@ import { findContract } from '@velar/types';
 import { AuthController } from '../../auth/auth.controller';
 import { BondsController } from '../../bonds/bonds.controller';
 import { NotificationsController } from '../../notifications/notifications.controller';
-import { PreferencesController } from '../../notifications/preferences.controller';
 import { ReportsController } from '../../reports/reports.controller';
 import { TransfersController } from '../../transfers/transfers.controller';
 import { UsersController } from '../../users/users.controller';
 
-const CONTROLLERS = [AuthController, BondsController, TransfersController, ReportsController, NotificationsController, PreferencesController, UsersController];
+const CONTROLLERS = [AuthController, BondsController, TransfersController, ReportsController, NotificationsController, UsersController];
 const METHODS: Record<number, string> = {
   [RequestMethod.GET]: 'GET',
   [RequestMethod.POST]: 'POST',

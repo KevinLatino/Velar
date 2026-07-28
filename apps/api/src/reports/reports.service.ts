@@ -1,8 +1,6 @@
 import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { AuditEventType, NotificationType, Role, type CreateReportRequest } from '@velar/types';
-import { AuditService } from '../audit/audit.service';
 import { SupabaseService } from '../common/supabase/supabase.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { Role, type CreateReportRequest } from '@velar/types';
 
 const AUTHORITY: Role[] = ['tse', 'admin'];
 
@@ -10,19 +8,7 @@ export type CreateReportInput = CreateReportRequest;
 
 @Injectable()
 export class ReportsService {
-  constructor(
-    private supabase: SupabaseService,
-    private audit: AuditService,
-    private notifications: NotificationsService,
-  ) {}
-
-  private async tseUserIds(): Promise<string[]> {
-    const { data } = await this.supabase.admin
-      .from('profiles')
-      .select('id')
-      .eq('role', 'tse');
-    return (data ?? []).map((p: any) => p.id);
-  }
+  constructor(private supabase: SupabaseService) {}
 
   async create(input: CreateReportInput, actorId: string, partyId: string | null) {
     if (!partyId) throw new ForbiddenException('Solo partidos pueden enviar reportes');
@@ -45,18 +31,6 @@ export class ReportsService {
       .select()
       .single();
     if (error) throw new BadRequestException(error.message);
-
-    await this.audit.emit({
-      type: AuditEventType.REPORT_SUBMITTED,
-      actorId,
-      payload: { reportId: data.id, partyId },
-    });
-    for (const tseId of await this.tseUserIds()) {
-      await this.notifications.emit(tseId, NotificationType.REPORT_SUBMITTED, {
-        reportId: data.id,
-        partyId,
-      });
-    }
     return data;
   }
 
@@ -106,28 +80,6 @@ export class ReportsService {
       .select()
       .single();
     if (error) throw new BadRequestException(error.message);
-
-    const auditType =
-      status === 'observado'
-        ? AuditEventType.REPORT_OBSERVED
-        : status === 'aprobado'
-          ? AuditEventType.REPORT_APPROVED
-          : AuditEventType.REPORT_VERSION_CREATED;
-    await this.audit.emit({
-      type: auditType,
-      actorId,
-      payload: { reportId: id, status, notes: notes ?? null },
-    });
-    const notifType =
-      status === 'observado'
-        ? NotificationType.REPORT_OBSERVED
-        : status === 'aprobado'
-          ? NotificationType.REPORT_APPROVED
-          : NotificationType.REPORT_SUBMITTED;
-    await this.notifications.emit(data.submitted_by, notifType, {
-      reportId: id,
-      status,
-    });
     return data;
   }
 }

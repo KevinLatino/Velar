@@ -20,7 +20,6 @@ export const AuditEventType = {
   PARTY_CREATED: 'party_created',
   WALLET_PROVISIONED: 'wallet_provisioned',
   BOND_PUBLISHED: 'bond_published',
-  BOND_REQUEST_CREATED: 'bond_request_created',
   COUNTER_OFFER_SENT: 'counter_offer_sent',
   REPORT_SUBMITTED: 'report_submitted',
   REPORT_RESUBMITTED: 'report_resubmitted',

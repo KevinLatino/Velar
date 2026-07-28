@@ -854,24 +854,6 @@ export class TransfersService {
         return_tse_notes: notes?.trim() || null,
       }).eq('id', transferId).select().single();
     if (error) throw new BadRequestException(error.message);
-
-    await this.audit.emit({
-      type: AuditEventType.TRANSFER_CANCELADA,
-      bondTokenId: transfer.bond_token_id,
-      transferId,
-      actorId,
-      payload: { kind: 'return_rejected', notes: notes?.trim() || null },
-    });
-    await this.notifications.emit(transfer.from_owner, NotificationType.OFFER_REJECTED, {
-      transferId,
-      bondTokenId: transfer.bond_token_id,
-      kind: 'return_rejected',
-    });
-    await this.notifications.emit(transfer.to_owner, NotificationType.OFFER_REJECTED, {
-      transferId,
-      bondTokenId: transfer.bond_token_id,
-      kind: 'return_rejected',
-    });
     return updated;
   }
 
