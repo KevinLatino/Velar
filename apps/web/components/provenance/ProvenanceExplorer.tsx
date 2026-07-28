@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Download,
   ExternalLink,
+  FileText,
   Printer,
   ShieldAlert,
   ShieldCheck,
@@ -16,6 +17,7 @@ import { txUrl } from '../../lib/stellar';
 import {
   anomalyLabel,
   buildProvenanceCsv,
+  buildProvenanceExportText,
   createProvenanceClient,
   provenanceSummary,
   sortAnomalies,
@@ -172,6 +174,13 @@ export function ProvenanceExplorer({
             className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant/40 px-3 py-1 text-xs font-medium text-on-surface hover:bg-surface-container-low"
           >
             <Download size={13} aria-hidden="true" /> CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => download(`procedencia-${data.bond.bondId ?? data.bond.tokenId}.txt`, buildProvenanceExportText(data), 'text/plain;charset=utf-8')}
+            className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant/40 px-3 py-1 text-xs font-medium text-on-surface hover:bg-surface-container-low"
+          >
+            <FileText size={13} aria-hidden="true" /> Informe
           </button>
           <button
             type="button"
