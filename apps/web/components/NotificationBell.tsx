@@ -28,6 +28,7 @@ const LABELS: Record<NotificationType, string> = {
   report_observed: 'Reporte observado por el TSE',
   report_approved: 'Reporte aprobado',
   report_resubmitted: 'Reporte reenviado',
+  analytics_threshold_breached: 'Alerta de analítica',
 };
 
 function str(v: unknown): string | undefined {

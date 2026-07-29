@@ -393,3 +393,41 @@ Galería viva en **`/design-system`** (cada variante + estado).
   exportado en `index.ts`, y agregado a `/design-system`.
 - Nuevo token → declaralo en `globals.css` (con override dark/país si aplica) **y** en `tokens.ts`
   con el mismo nombre. No dejes valores que puedan divergir.
+- **Charts (Recharts, §15):** los colores de series/ejes/grid se pasan siempre vía
+  `colorVar('primary')`, etc. — nunca hex literal — para que los gráficos respeten el tema
+  claro/oscuro igual que el resto de la UI.
+
+## 15. Dashboard de analítica & BI (issue #44)
+
+Panel de inteligencia de negocio para TSE (`/tse/analytics`, todo el ecosistema) y partido
+(`/partido/analytics`, solo su propia data — el backend la restringe, el frontend no filtra
+por seguridad). KPIs, 5 tipos de gráfico, filtros, drill-down, vistas guardadas y export
+CSV/PDF, todo sobre `GET /analytics/snapshot`.
+
+### Helpers puros — `lib/analytics/`
+- **`query.ts`** — `AnalyticsQuery` ⇄ `URLSearchParams` (`queryToSearchParams`,
+  `searchParamsToQuery`, `queryToQueryString`). Es lo que se guarda como "vista guardada".
+- **`client.ts`** — wrapper delgado sobre `apiFetch`/`apiDownload` (`lib/api.ts`) — no crea
+  un cliente HTTP paralelo: `fetchSnapshot`, `downloadCsv`/`downloadPdf`,
+  `listSavedViews`/`createSavedView`/`deleteSavedView`, `listAlertRules`/`createAlertRule`/
+  `deleteAlertRule`/`evaluateAlertRule`.
+
+### Componentes — `components/analytics/`
+- **`AnalyticsDashboard`** — el árbol completo (KPIs, filtros, charts, embudo, top bonos,
+  cumplimiento), compartido por ambas páginas vía la prop `showPartyControls` (oculta
+  filtro de país/partido en la vista del partido, que siempre ve solo lo suyo).
+- **`KpiCard`**, **`FilterBar`** (fecha desde/hasta, país, partido, estado, bucket),
+  **`SavedViewsMenu`** (listar/guardar/borrar vistas), **`ExportButtons`** (CSV/PDF),
+  **`DrillDownPanel`** — modal (`components/ui/Modal.tsx`) que, al hacer clic en un "top
+  bono", reutiliza los endpoints legados de detalle (`price-history`/`owners`) para mostrar
+  histórico de precios y cadena de propietarios.
+- **`charts/`** — `BarChart`, `LineChart`, `AreaChart`, `PieChart`, `StackedBarChart`
+  (Recharts). Cada uno se apoya en `ChartFrame`, que agrega `role="img"` + `aria-label` y un
+  `<table className="sr-only">` con los mismos datos como fallback de accesibilidad — no hay
+  toggle, siempre está en el DOM.
+
+### Integración
+`TSEShell`/`PartidoShell` ya tienen el link "Análisis" en el nav. RBAC es 100% backend
+(`docs/AGENTS.md` §5): el `AnalyticsScope` que decide qué partido ve qué se resuelve en
+`AnalyticsService.resolveScope`, nunca en el cliente. Sin `service_role` ni secretos en el
+frontend. Estados de carga/vacío/error en cada sección (no pantallas en blanco).

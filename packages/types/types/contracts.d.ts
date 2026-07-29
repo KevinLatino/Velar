@@ -1336,9 +1336,9 @@ export declare const apiContracts: {
                 aprobado: "aprobado";
                 rechazado: "rechazado";
                 enviado: "enviado";
-                revisado: "revisado";
                 observado: "observado";
                 pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
+                revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
             reviewed_at: z.ZodNullable<z.ZodString>;
@@ -1376,9 +1376,9 @@ export declare const apiContracts: {
                 aprobado: "aprobado";
                 rechazado: "rechazado";
                 enviado: "enviado";
-                revisado: "revisado";
                 observado: "observado";
                 pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
+                revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
             reviewed_at: z.ZodNullable<z.ZodString>;
@@ -1411,9 +1411,9 @@ export declare const apiContracts: {
                 aprobado: "aprobado";
                 rechazado: "rechazado";
                 enviado: "enviado";
-                revisado: "revisado";
                 observado: "observado";
                 pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
+                revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
             reviewed_at: z.ZodNullable<z.ZodString>;
@@ -1431,8 +1431,8 @@ export declare const apiContracts: {
             status: z.ZodEnum<{
                 aprobado: "aprobado";
                 rechazado: "rechazado";
-                revisado: "revisado";
                 observado: "observado";
+                revisado: "revisado";
             }>;
             notes: z.ZodOptional<z.ZodString>;
             expectedVersion: z.ZodOptional<z.ZodNumber>;
@@ -1455,9 +1455,9 @@ export declare const apiContracts: {
                 aprobado: "aprobado";
                 rechazado: "rechazado";
                 enviado: "enviado";
-                revisado: "revisado";
                 observado: "observado";
                 pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
+                revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
             reviewed_at: z.ZodNullable<z.ZodString>;
@@ -1492,9 +1492,9 @@ export declare const apiContracts: {
                 aprobado: "aprobado";
                 rechazado: "rechazado";
                 enviado: "enviado";
-                revisado: "revisado";
                 observado: "observado";
                 pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
+                revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
             reviewed_at: z.ZodNullable<z.ZodString>;
@@ -1527,6 +1527,7 @@ export declare const apiContracts: {
                     readonly REPORT_OBSERVED: "report_observed";
                     readonly REPORT_APPROVED: "report_approved";
                     readonly REPORT_RESUBMITTED: "report_resubmitted";
+                    readonly ANALYTICS_THRESHOLD_BREACHED: "analytics_threshold_breached";
                 }>;
                 payload: z.ZodRecord<z.ZodString, z.ZodUnknown>;
                 read: z.ZodBoolean;

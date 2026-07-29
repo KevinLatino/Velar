@@ -426,3 +426,90 @@ trazabilidad) y corre el motor.
 ### Comprobación local sin credenciales
 `npx jest` en `apps/api` (motor + servicio con `AuditService` mockeado). El motor
 no toca la red ni la base; el servicio se prueba con dobles.
+
+## 10. Analítica & BI: motor de agregación, alertas y reportes programados (issue #44)
+
+Plataforma de analítica en tiempo real para el ecosistema de bonos: KPIs, breakdowns
+por partido/país, embudo de transferencias, series de tiempo, cumplimiento de reportes,
+alertas de umbral y exportación CSV/PDF. Mismo patrón que procedencia (§9): motor **puro**
+fixture-testeado, sin tocar Supabase, con el acceso a datos aislado en un servicio propio.
+
+### Motor puro (`analytics/engine/`)
+Funciones sin dependencias, una por archivo:
+- `aggregations.ts` — `aggregateByBondStatus`, `aggregateByParty`, `aggregateByCountry`,
+  `aggregateValueVolume`.
+- `funnel.ts` — `computeTransferFunnel`: cuenta transferencias por etapa usando el índice
+  de `TRANSFER_LIFECYCLE_STEPS` (reutilizado de `@velar/types`, no redefinido). Sin eventos
+  de auditoría en el input, los estados fuera del camino feliz (`contraoferta`, `rechazada`,
+  `cancelada`) se cuentan aparte y no en las etapas.
+- `timeseries.ts` — `bucketByDate` genérico (día/semana/mes, UTC) + series de emisión,
+  transferencias liberadas y "throughput" de escrow (aproximado como `createdAt`→`updatedAt`
+  de transferencias terminales; sin dependencia de `AuditEvent`).
+- `trends.ts` — `periodOverPeriodDelta`, `movingAverage`, `topN`, `detectThresholdAnomalies`.
+- `compliance.ts` — adapta `computeComplianceForPeriods` (`reports/domain/deadlines.ts`,
+  reutilizado, no reimplementado) para agrupar por partido.
+- `alerts.ts` — `evaluateAlertRules`: compara un `AnalyticsSnapshot` contra reglas por
+  dot-path de métrica (`valueVolume.totalVolumeMoved`, etc.), sin I/O.
+- `index.ts` — `buildAnalyticsSnapshot(input, query, scope, now, deadlineConfig)`: aplica
+  `AnalyticsScope` (RBAC ya resuelto, el motor nunca importa `Role`) y `AnalyticsQuery`,
+  compone todo lo anterior. Nunca muta `input`.
+
+### Datos, servicio y RBAC (`analytics/`)
+- `analytics-data.service.ts` — único lugar que toca `SupabaseService.admin.from(...)`;
+  mapea `bonds`/`transfers`/`reports` a los tipos de `@velar/types`. Filtra reportes del
+  modelo legado sin `period_year`/`period_month` (no alimentan cumplimiento).
+- `analytics.service.ts` — `resolveScope(role, partyId)`: TSE/admin ven todo; `emisor` ve
+  solo su partido; el resto no tiene acceso a analítica agregada. También: export CSV/PDF,
+  CRUD de vistas guardadas (`analytics_saved_views`, por dueño) y reglas de alerta
+  (`analytics_alert_rules`, TSE/admin), evaluación de alertas (emite notificaciones vía
+  `NotificationsService.emit` con `NotificationType.ANALYTICS_THRESHOLD_BREACHED`, nunca
+  lanza) y reporte programado manual. Mantiene sin cambios los endpoints legados de
+  drill-down (`bonds/:tokenId/price-history`, `bonds/:tokenId/owners`, `top-bonds`,
+  `legacy-export`) que usan Supabase en vivo con nombres de perfiles.
+- `analytics.controller.ts` — rutas de solo-lectura resueltas por rol dentro del servicio;
+  `@Roles('tse','admin')` (vía `RolesGuard`, global) en configuración privilegiada
+  (reglas de alerta, disparo de reporte programado).
+
+```
+GET    /api/analytics/snapshot                (?from&to&country&partyId&status&bucket)
+GET    /api/analytics/export?format=csv|pdf   (mismo query, snapshot-based)
+GET    /api/analytics/top-bonds               (legado, detalle con nombres)
+GET    /api/analytics/bonds/:tokenId/price-history   (legado, drill-down)
+GET    /api/analytics/bonds/:tokenId/owners          (legado, drill-down)
+GET    /api/analytics/legacy-export?format=csv       (legado, CSV con nombres)
+
+GET    /api/analytics/views | POST | DELETE /:id      (vistas guardadas, por dueño)
+GET    /api/analytics/alert-rules | POST | PATCH | DELETE /:id   (tse/admin)
+POST   /api/analytics/alert-rules/:id/evaluate                    (tse/admin)
+POST   /api/analytics/scheduled-reports/run                       (tse/admin, manual)
+```
+
+### Alertas y reporte programado: interfaz + stub
+`ScheduledReportGenerator` (interfaz + token `SCHEDULED_REPORT_GENERATOR`, mismo patrón
+que el hook de antivirus en `reports/files/file-scanner.ts`) tiene una única implementación
+manual (`ManualScheduledReportGenerator`): genera CSV/PDF del snapshot actual bajo demanda.
+No hay cron ni vendor — se dispara solo por `POST /scheduled-reports/run`.
+
+### Exportación
+- `csv/analytics-csv.ts` — `renderSnapshotCsv`: CSV determinístico del snapshot completo
+  (breakdowns + totales), puro, sin nombres de perfiles (por eso convive con el CSV legado).
+- `pdf/analytics-pdf.ts` — `renderAnalyticsPdf` con `pdf-lib` (JS puro, sin navegador headless).
+  El contenido es determinístico; el orden interno de objetos del PDF no lo es entre
+  ejecuciones, así que las pruebas son **estructurales** (header `%PDF-`, `PDFDocument.load`
+  reabre el archivo, cuenta de páginas), no snapshots de bytes.
+
+### Migración
+`supabase/migrations/20260728000000_analytics_saved_views.sql` — tablas
+`analytics_saved_views` (RLS: dueño) y `analytics_alert_rules` (RLS: TSE/admin). Aditiva,
+no toca ninguna migración existente. Sin vista materializada de pre-agregación en v1 (el
+volumen de datos de la demo no lo justifica todavía).
+
+### Tipos (`@velar/types`)
+`analytics.ts` — `AnalyticsInput`, `AnalyticsQuery`, `AnalyticsScope`, `AnalyticsSnapshot`
+y cada breakdown/serie/trend, `AlertRule`/`AlertBreach`, `SavedView`, `ScheduledReportConfig`/
+`Result`. Fixture en `fixtures/analytics.ts` (`analyticsFixture`, 3 partidos en 2 países,
+todo el embudo de transferencias, cumplimiento on-time/late/missing).
+
+### Comprobación local sin credenciales
+`npx jest src/analytics` en `apps/api` (motor puro fixture-driven, capa de datos y servicio
+con `SupabaseService`/`NotificationsService` mockeados, exportación CSV/PDF determinística).

@@ -20,6 +20,8 @@ export * from './contract-reader';
 export * from './fixtures/contract-reader';
 export * from './provenance';
 export * from './fixtures/provenance';
+export * from './analytics';
+export * from './fixtures/analytics';
 export * from './schemas/common';
 export * from './schemas/auth';
 export * from './schemas/bonds';

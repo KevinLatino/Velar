@@ -3,9 +3,9 @@ export declare const reportStatusSchema: z.ZodEnum<{
     aprobado: "aprobado";
     rechazado: "rechazado";
     enviado: "enviado";
-    revisado: "revisado";
     observado: "observado";
     pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
+    revisado: "revisado";
 }>;
 export declare const createReportRequestSchema: z.ZodObject<{
     title: z.ZodString;
@@ -19,8 +19,8 @@ export declare const reviewReportRequestSchema: z.ZodObject<{
     status: z.ZodEnum<{
         aprobado: "aprobado";
         rechazado: "rechazado";
-        revisado: "revisado";
         observado: "observado";
+        revisado: "revisado";
     }>;
     notes: z.ZodOptional<z.ZodString>;
     expectedVersion: z.ZodOptional<z.ZodNumber>;
@@ -39,9 +39,9 @@ export declare const reportRowSchema: z.ZodObject<{
         aprobado: "aprobado";
         rechazado: "rechazado";
         enviado: "enviado";
-        revisado: "revisado";
         observado: "observado";
         pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
+        revisado: "revisado";
     }>;
     reviewed_by: z.ZodNullable<z.ZodString>;
     reviewed_at: z.ZodNullable<z.ZodString>;
