@@ -16,7 +16,7 @@ import { ReportLifecycleService } from './report-lifecycle.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
-import { Role } from '@velar/types';
+import { HistoricalReportFixture, Role } from '@velar/types';
 import { AddLineItemDto, CreateDraftDto } from './dto/report-lifecycle.dto';
 
 /**
@@ -115,6 +115,30 @@ export class ReportLifecycleController {
       id,
       user.id,
       user.profile?.party_id ?? null,
+      user.profile?.role as Role,
+    );
+  }
+
+  @Get(':id/findings')
+  findings(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.lifecycle.getFindings(id, user.profile?.party_id ?? null, user.profile?.role as Role);
+  }
+
+  @Get(':id/audit-chain')
+  auditChain(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.lifecycle.getAuditChain(id, user.profile?.party_id ?? null, user.profile?.role as Role);
+  }
+
+  @Post('rules/backtest')
+  @Roles('admin')
+  backtestRules(
+    @Body() body: { baselineVersion: string; candidateVersion: string; fixtures: HistoricalReportFixture[] },
+    @CurrentUser() user: any,
+  ) {
+    return this.lifecycle.backtestRules(
+      body.baselineVersion,
+      body.candidateVersion,
+      body.fixtures,
       user.profile?.role as Role,
     );
   }

@@ -53,15 +53,30 @@ function reportRow(over: Partial<any> = {}) {
   };
 }
 
+/** Chain that rejects when awaited (simulates insert failure). */
+function rejectingChain(err: Error) {
+  const p: any = {
+    insert: () => p,
+    then: (_res: any, rej: any) => Promise.reject(err).then(undefined, rej),
+  };
+  return p;
+}
+
 describe('ReportLifecycleService', () => {
   let service: ReportLifecycleService;
-  let audit: { emit: jest.Mock };
+  let audit: { emit: jest.Mock; getReportAuditTrail: jest.Mock };
   let notifications: { emit: jest.Mock };
   let fromMock: jest.Mock;
   let uploadMock: jest.Mock;
 
   beforeEach(async () => {
-    audit = { emit: jest.fn() };
+    audit = {
+      emit: jest.fn(),
+      getReportAuditTrail: jest.fn().mockResolvedValue({
+        events: [],
+        verification: { valid: true, checkedCount: 0, issues: [] },
+      }),
+    };
     notifications = { emit: jest.fn() };
     fromMock = jest.fn();
     uploadMock = jest.fn().mockResolvedValue({ error: null });
@@ -275,6 +290,134 @@ describe('ReportLifecycleService', () => {
   describe('computeTotal', () => {
     it('sums line item amounts to cents', () => {
       expect(computeTotal([{ amount: 10.1 }, { amount: 20.2 }, { amount: 0.7 }])).toBe(31);
+    });
+  });
+
+  // ── Hallazgos de reglas (#41) ──────────────────────────────────────────────
+  describe('getFindings', () => {
+    beforeEach(() => {
+      fromMock.mockImplementation((table: string) => {
+        if (table === 'reports') return chain({ data: reportRow(), error: null });
+        if (table === 'report_line_items') return chain({ data: [lineRow()], error: null });
+        if (table === 'bonds')
+          return chain({ data: [{ token_id: 'bond-a', face_value: 1000 }], error: null });
+        if (table === 'report_deadlines')
+          return chain({ data: { due_day_of_month: 15, grace_days: 5 }, error: null });
+        if (table === 'rule_evaluations') return chain({ error: null });
+        return chain({ data: [], error: null });
+      });
+    });
+
+    it('allows the party owner to call it', async () => {
+      const result = await service.getFindings('rep-1', PARTY, 'emisor');
+      expect(result).toMatchObject({
+        ruleSetVersion: expect.any(String),
+        findings: expect.any(Array),
+        overallSeverity: expect.any(String),
+        evaluatedAt: expect.any(String),
+      });
+    });
+
+    it('allows TSE/admin to call it for any party', async () => {
+      const tseResult = await service.getFindings('rep-1', 'other-party', 'tse');
+      expect(tseResult.ruleSetVersion).toEqual(expect.any(String));
+      const adminResult = await service.getFindings('rep-1', null, 'admin');
+      expect(adminResult.findings).toEqual(expect.any(Array));
+    });
+
+    it('forbids a different party', async () => {
+      jest.spyOn(service as any, 'loadReportRow').mockResolvedValue(reportRow());
+      await expect(
+        service.getFindings('rep-1', 'other-party', 'emisor'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('falls back to default deadline config when report_deadlines lookup fails', async () => {
+      fromMock.mockImplementation((table: string) => {
+        if (table === 'reports') return chain({ data: reportRow(), error: null });
+        if (table === 'report_line_items') return chain({ data: [lineRow()], error: null });
+        if (table === 'bonds')
+          return chain({ data: [{ token_id: 'bond-a', face_value: 1000 }], error: null });
+        if (table === 'report_deadlines')
+          return chain({ data: null, error: { message: 'not found' } });
+        if (table === 'rule_evaluations') return chain({ error: null });
+        return chain({ data: [], error: null });
+      });
+      const result = await service.getFindings('rep-1', PARTY, 'emisor');
+      expect(result).toMatchObject({
+        ruleSetVersion: expect.any(String),
+        findings: expect.any(Array),
+        overallSeverity: expect.any(String),
+        evaluatedAt: expect.any(String),
+      });
+    });
+
+    it('still succeeds when rule_evaluations insert fails', async () => {
+      fromMock.mockImplementation((table: string) => {
+        if (table === 'reports') return chain({ data: reportRow(), error: null });
+        if (table === 'report_line_items') return chain({ data: [lineRow()], error: null });
+        if (table === 'bonds')
+          return chain({ data: [{ token_id: 'bond-a', face_value: 1000 }], error: null });
+        if (table === 'report_deadlines')
+          return chain({ data: { due_day_of_month: 15, grace_days: 5 }, error: null });
+        if (table === 'rule_evaluations') return rejectingChain(new Error('insert failed'));
+        return chain({ data: [], error: null });
+      });
+      await expect(service.getFindings('rep-1', PARTY, 'emisor')).resolves.toMatchObject({
+        ruleSetVersion: expect.any(String),
+        findings: expect.any(Array),
+        overallSeverity: expect.any(String),
+        evaluatedAt: expect.any(String),
+      });
+    });
+  });
+
+  // ── Cadena de auditoría (#41) ──────────────────────────────────────────────
+  describe('getAuditChain', () => {
+    it('allows the party owner to call it', async () => {
+      jest.spyOn(service as any, 'loadReportRow').mockResolvedValue(reportRow());
+      const result = await service.getAuditChain('rep-1', PARTY, 'emisor');
+      expect(audit.getReportAuditTrail).toHaveBeenCalledWith('rep-1');
+      expect(result).toEqual({
+        events: [],
+        verification: { valid: true, checkedCount: 0, issues: [] },
+      });
+    });
+
+    it('allows TSE/admin to call it for any party', async () => {
+      jest.spyOn(service as any, 'loadReportRow').mockResolvedValue(reportRow());
+      await service.getAuditChain('rep-1', 'other-party', 'tse');
+      expect(audit.getReportAuditTrail).toHaveBeenCalledWith('rep-1');
+      audit.getReportAuditTrail.mockClear();
+      await service.getAuditChain('rep-1', null, 'admin');
+      expect(audit.getReportAuditTrail).toHaveBeenCalledWith('rep-1');
+    });
+
+    it('forbids a different party', async () => {
+      jest.spyOn(service as any, 'loadReportRow').mockResolvedValue(reportRow());
+      await expect(
+        service.getAuditChain('rep-1', 'other-party', 'emisor'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(audit.getReportAuditTrail).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── Backtesting de reglas (#41) ────────────────────────────────────────────
+  describe('backtestRules', () => {
+    it('rejects a non-admin role', async () => {
+      await expect(
+        service.backtestRules('v1', 'v2', [], 'tse'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('returns a BacktestResult for admin with empty fixtures', async () => {
+      const result = await service.backtestRules('v1', 'v2', [], 'admin');
+      expect(result).toMatchObject({
+        baselineVersion: 'v1',
+        candidateVersion: 'v2',
+        diffs: expect.any(Array),
+        summary: { totalReports: 0, reportsChanged: expect.any(Number) },
+      });
     });
   });
 });

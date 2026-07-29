@@ -1334,8 +1334,10 @@ export declare const apiContracts: {
             total_amount: z.ZodNullable<z.ZodCoercedNumber<unknown>>;
             status: z.ZodEnum<{
                 aprobado: "aprobado";
+                rechazado: "rechazado";
                 enviado: "enviado";
                 observado: "observado";
+                pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
                 revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
@@ -1372,8 +1374,10 @@ export declare const apiContracts: {
             total_amount: z.ZodNullable<z.ZodCoercedNumber<unknown>>;
             status: z.ZodEnum<{
                 aprobado: "aprobado";
+                rechazado: "rechazado";
                 enviado: "enviado";
                 observado: "observado";
+                pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
                 revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
@@ -1405,8 +1409,10 @@ export declare const apiContracts: {
             total_amount: z.ZodNullable<z.ZodCoercedNumber<unknown>>;
             status: z.ZodEnum<{
                 aprobado: "aprobado";
+                rechazado: "rechazado";
                 enviado: "enviado";
                 observado: "observado";
+                pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
                 revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
@@ -1424,10 +1430,12 @@ export declare const apiContracts: {
         body: z.ZodObject<{
             status: z.ZodEnum<{
                 aprobado: "aprobado";
+                rechazado: "rechazado";
                 observado: "observado";
                 revisado: "revisado";
             }>;
             notes: z.ZodOptional<z.ZodString>;
+            expectedVersion: z.ZodOptional<z.ZodNumber>;
         }, z.core.$strict>;
         params: z.ZodObject<{
             id: z.ZodString;
@@ -1445,8 +1453,47 @@ export declare const apiContracts: {
             total_amount: z.ZodNullable<z.ZodCoercedNumber<unknown>>;
             status: z.ZodEnum<{
                 aprobado: "aprobado";
+                rechazado: "rechazado";
                 enviado: "enviado";
                 observado: "observado";
+                pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
+                revisado: "revisado";
+            }>;
+            reviewed_by: z.ZodNullable<z.ZodString>;
+            reviewed_at: z.ZodNullable<z.ZodString>;
+            tse_notes: z.ZodNullable<z.ZodString>;
+            created_at: z.ZodString;
+            updated_at: z.ZodString;
+        }, z.core.$loose>;
+    };
+    readonly 'reports.assign': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        auth: boolean;
+        body: z.ZodObject<{
+            reviewerId: z.ZodString;
+        }, z.core.$strict>;
+        params: z.ZodObject<{
+            id: z.ZodString;
+        }, z.core.$strip>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            id: z.ZodString;
+            party_id: z.ZodString;
+            submitted_by: z.ZodString;
+            title: z.ZodString;
+            description: z.ZodString;
+            period_start: z.ZodNullable<z.ZodString>;
+            period_end: z.ZodNullable<z.ZodString>;
+            bond_token_ids: z.ZodNullable<z.ZodArray<z.ZodString>>;
+            total_amount: z.ZodNullable<z.ZodCoercedNumber<unknown>>;
+            status: z.ZodEnum<{
+                aprobado: "aprobado";
+                rechazado: "rechazado";
+                enviado: "enviado";
+                observado: "observado";
+                pendiente_segunda_aprobacion: "pendiente_segunda_aprobacion";
                 revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
