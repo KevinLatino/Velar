@@ -285,8 +285,8 @@ por cláusula y un set de términos clave resaltados. Reglas:
   locale, aliases[], created_at`. **RLS: lectura pública** (`USING (true)`); escritura solo por
   `service_role` (backend). Semilla idempotente con los términos base en español.
 - `ContractsService` lee el glosario vía `SupabaseService` (mockeable en tests) y deriva el lector
-  con las funciones puras. El origen del contrato estructurado es un fixture hasta que aterrice el
-  epic #38 (Contract intelligence & assembly).
+  con las funciones puras. El origen del contrato estructurado es la derivación real del epic #38
+  (ver §11) — ya no un fixture.
 
 ### Endpoints (públicos — también los usa `/verificar/[id]`)
 
@@ -298,8 +298,8 @@ por cláusula y un set de términos clave resaltados. Reglas:
 ### Tipos
 
 En `@velar/types`: `ContractReaderResponse`, `PlainLanguageClause`, `GlossaryTerm`, `ClauseKeyTerm`,
-`ReaderLocale` (reader), y el modelo provisional `ContractSummary`/`ContractClause`/`ClauseCategory`
-(fixture de #38, a reemplazar cuando ese epic aterrice).
+`ReaderLocale` (reader), y el modelo canónico `ContractSummary`/`ContractClause`/`ClauseCategory`
+del epic #38 (ver §11).
 
 ### Comprobación local sin credenciales
 
@@ -513,3 +513,94 @@ todo el embudo de transferencias, cumplimiento on-time/late/missing).
 ### Comprobación local sin credenciales
 `npx jest src/analytics` en `apps/api` (motor puro fixture-driven, capa de datos y servicio
 con `SupabaseService`/`NotificationsService` mockeados, exportación CSV/PDF determinística).
+
+## 11. Motor de inteligencia de contratos y ensamblado de documentos (issue #38)
+
+Modelo estructurado y versionado del contrato de un bono: biblioteca de cláusulas reutilizables
+y parametrizadas, plantillas por país, y derivación de un `ContractSummary` rico (monto,
+condiciones, obligaciones por rol, fechas clave, estado y alertas de atención) — todo con
+**funciones puras**, mismo patrón que procedencia (§9) y analítica (§10). El resumen
+**complementa** el contrato legal; nunca lo reemplaza. Cierra el `@todo` de #39: el lector de
+contratos ahora consume esta derivación real, ya no el fixture.
+
+### Esquema (migración `20260729000000_contract_engine.sql`)
+- `contract_clauses` — biblioteca de cláusulas reutilizables: `clause_key` (única), `category`
+  (`contract_clause_category`, espeja `ClauseCategory`), `title`, `body_template` (con tokens
+  `{{parametro}}`), `parameters[]`, `locale`. No se muta una cláusula ya referenciada por una
+  versión publicada: se crea una nueva con otro `clause_key`.
+- `contract_templates` — un tipo de contrato por jurisdicción: `key` (única), `country`
+  (`CHECK` contra los países soportados), `name`, `description`.
+- `contract_versions` — revisión de una plantilla: `template_id`, `version_number`, `status`
+  (`draft|published|archived`), `clause_keys[]` (orden lógico), `notes`, `created_by`,
+  `published_at`. Único por `(template_id, version_number)`.
+- RLS: lectura pública en las tres (mismo razonamiento que `glossary_terms`: texto de plantilla
+  legal, no sensible; habilita el lector público en `/verificar/[id]`); sin política de
+  escritura — solo `service_role`. Semilla idempotente: plantilla CR (mismo texto que el fixture
+  que usaba #39) + una segunda, CO, para ejercer de verdad el soporte multi-país.
+
+### Motor puro (`contracts/domain/`)
+- `template.ts` — `resolveClauseTemplate(bodyTemplate, params)`: sustituye tokens `{{param}}`;
+  un parámetro faltante **nunca se inventa** — queda como `[dato no disponible: <param>]` y se
+  reporta en `missingParameters`. Compartido por `summary.ts` y `assembly.ts`.
+- `summary.ts` — `deriveContractSummary(input: ContractSummaryInput): ContractSummary`:
+  - `status`: mapeo puro bono/transferencia → `ContractStatus`, según la máquina de estados de
+    `docs/AGENTS.md` §4.
+  - `amount`: monto de la transferencia activa (no `rechazada`/`cancelada`) o, si no hay, el
+    valor facial del bono; `unknown: true` solo si ninguna de las dos existe.
+  - `obligations`/`conditions`: plantillas mantenidas por `ClauseCategory` (mismo patrón que
+    `plain-language.ts`), con `role: ContractPartyRole` (`tse|vendedor|comprador`, semántico —
+    no el `Role` del sistema, para no requerir lookups de perfil en una función pura). Categorías
+    sin plantilla simplemente no producen obligación/condición (nunca se fabrican).
+  - `keyDates`: fechas de emisión/vencimiento del bono, publicación de la versión, y (si hay
+    transferencia relevante) solicitud/último cambio/liberación; `unknown: true` cuando falta el
+    dato fuente.
+  - `attentionFlags`: reglas determinísticas (mismo enfoque que `analytics/engine/alerts.ts` y
+    `reports/domain/deadlines.ts`) — `frozen`, `approaching_maturity`/`maturity_passed`,
+    `stalled_escrow`, `amount_mismatch`, `missing_key_dates`.
+- `assembly.ts` — `assembleContractDocument(input: AssembleDocumentInput)`: ensamblado
+  determinístico del documento completo desde una versión + parámetros resueltos.
+- `diff.ts` — `diffContractVersions(a, b): ContractVersionDiff`: compara `clauseKeys` ordenados
+  entre dos versiones → `added`/`removed`/`changed` (texto u orden distinto)/`unchanged`.
+
+### Servicio y endpoints
+`ContractsService` reutiliza `AuditService.resolveTokenId`/`getProvenanceInput` (igual que
+`ProvenanceService`) para no reimplementar el mapeo bono/transferencias; solo agrega una consulta
+liviana para `country` (no incluido en ese mapper) y resuelve nombres de partes best-effort
+(perfil/partido) para los parámetros del documento — si no se resuelven, quedan como parámetro
+faltante, nunca se inventan.
+
+`ContractEngineController` (nuevo, separado de `ContractsController` que sigue `@Public()` para
+#39) requiere auth por defecto:
+
+```
+GET   /api/bonds/:tokenId/summary               (reusa la autorización de bonds.findOne)
+GET   /api/contracts/templates                  (?country=)
+POST  /api/contracts/templates                  (tse/admin)
+GET   /api/contracts/templates/:id/versions
+POST  /api/contracts/templates/:id/versions      (tse/admin)
+GET   /api/contracts/versions/diff               (?from=&to=; declarado ANTES de :versionId)
+GET   /api/contracts/versions/:versionId
+PATCH /api/contracts/versions/:versionId/publish (tse/admin)
+GET   /api/contracts/clauses                     (?category=)
+POST  /api/contracts/clauses                     (tse/admin)
+GET   /api/contracts/:bondId/document            (?versionId=)
+```
+
+Todos registrados en `apiContracts` (`@velar/types`, issue #43): request/response tipados y
+cubiertos por `controller-contract-coverage.spec.ts` para `BondsController`.
+
+### Tipos (`@velar/types`)
+`contract-model.ts` — `ContractSummary` extendido (aditivo; los 5 campos que usa #39 no
+cambiaron): `country`, `amount`, `conditions`, `obligations`, `keyDates`, `status`,
+`attentionFlags`, más `ContractPartyRole`/`ContractStatus`/`ContractAttentionFlag`/etc.
+`contract-engine.ts` (nuevo) — `ContractTemplate`, `ContractVersionSummary`/`Detail`,
+`ContractClauseLibraryEntry`, `ContractVersionDiff`, `AssembledContractDocument`, y los inputs
+de las funciones puras. Fixture en `fixtures/contract-engine.ts` (bono, transferencias,
+plantilla CR con 2 versiones para probar el diff).
+
+### Comprobación local sin credenciales
+```bash
+npm run test --workspace apps/api -- --testPathPatterns contracts
+```
+Funciones puras fixture-driven sin mocks (`domain/*.spec.ts`) + servicio con
+`SupabaseService`/`AuditService` mockeados (`contracts.service.spec.ts`).
