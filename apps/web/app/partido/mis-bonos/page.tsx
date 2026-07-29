@@ -2,8 +2,9 @@
 import { notify } from '../../../components/Toast';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Wallet, Boxes, ExternalLink, ShoppingCart, TrendingUp, FileText } from 'lucide-react';
+import { Wallet, Boxes, ExternalLink, ShoppingCart, TrendingUp, FileText, FileCog } from 'lucide-react';
 import { ContractReaderDialog } from '../../../components/contract-reader/ContractReaderDialog';
+import { ContractEngineDialog } from '../../../components/contract-engine/ContractEngineDialog';
 import { PartidoShell } from '../../../components/PartidoShell';
 import { PaginationControls } from '../../../components/PaginationControls';
 import { PublishBondDialog, type PaymentMethod } from '../../../components/PublishBondDialog';
@@ -53,6 +54,7 @@ export default function PartidoMisBonosPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [publishTarget, setPublishTarget] = useState<string | null>(null);
   const [readerBondId, setReaderBondId] = useState<string | null>(null);
+  const [engineBondId, setEngineBondId] = useState<string | null>(null);
 
   const load = (tok: string, p = page) =>
     apiFetch(tok, 'GET', `/bonds?${paginatedQuery(p, limit)}`)
@@ -157,6 +159,11 @@ export default function PartidoMisBonosPage() {
                           aria-label={`Leer el contrato del bono ${b.bond_id}`}>
                           <FileText size={12} /> Contrato
                         </button>
+                        <button onClick={() => setEngineBondId(b.bond_id)}
+                          className="flex items-center gap-1 rounded-lg border border-outline-variant/40 px-2.5 py-1.5 text-xs text-on-surface-variant transition hover:text-primary"
+                          aria-label={`Gestionar el contrato del bono ${b.bond_id}`}>
+                          <FileCog size={12} /> Gestión de contrato
+                        </button>
                         <a href={bondExplorerUrl(b.soroban_contract_id, b.bond_id)} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-1 rounded-lg border border-outline-variant/40 px-2.5 py-1.5 text-xs text-on-surface-variant transition hover:text-primary">
                           <ExternalLink size={12} /> Stellar
@@ -181,6 +188,10 @@ export default function PartidoMisBonosPage() {
 
       {readerBondId && (
         <ContractReaderDialog bondId={readerBondId} onClose={() => setReaderBondId(null)} />
+      )}
+
+      {engineBondId && token && (
+        <ContractEngineDialog bondId={engineBondId} token={token} onClose={() => setEngineBondId(null)} />
       )}
     </PartidoShell>
   );

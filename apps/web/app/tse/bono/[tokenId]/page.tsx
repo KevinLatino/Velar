@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { TSEShell } from '../../../../components/TSEShell';
 import { ContractReader } from '../../../../components/contract-reader/ContractReader';
+import { ContractEngineExplorer } from '../../../../components/contract-engine/ContractEngineExplorer';
 import { useSession, apiFetch, apiFetchBlob, API_URL } from '../../../../lib/api';
 import { contractUrl, accountUrl } from '../../../../lib/stellar';
 
@@ -450,6 +451,14 @@ export default function BonoDetallePage() {
               <h2 className="mb-3 text-lg font-semibold text-slate-900">Entiende el contrato</h2>
               <ContractReader bondId={data.bond_id ?? tokenId} />
             </div>
+
+            {/* Gestión de contrato: resumen estructurado, documento y versiones (#38) */}
+            {token && (
+              <div className="mt-8">
+                <h2 className="mb-3 text-lg font-semibold text-slate-900">Gestión de contrato</h2>
+                <ContractEngineExplorer bondId={data.bond_id ?? tokenId} token={token} />
+              </div>
+            )}
           </>
         )}
       </div>
