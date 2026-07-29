@@ -8,7 +8,7 @@ export declare const apiContracts: {
     readonly 'auth.register': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             email: z.ZodString;
@@ -47,7 +47,7 @@ export declare const apiContracts: {
     readonly 'auth.login': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             email: z.ZodString;
@@ -66,7 +66,7 @@ export declare const apiContracts: {
     readonly 'bonds.list': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{}, z.core.$strict>;
@@ -127,7 +127,7 @@ export declare const apiContracts: {
     readonly 'bonds.requests.list': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{}, z.core.$strict>;
@@ -155,7 +155,7 @@ export declare const apiContracts: {
     readonly 'bonds.requests.create': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             faceValue: z.ZodCoercedNumber<unknown>;
@@ -192,7 +192,7 @@ export declare const apiContracts: {
     readonly 'bonds.requests.approve': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -246,7 +246,7 @@ export declare const apiContracts: {
     readonly 'bonds.requests.reject': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             reason: z.ZodOptional<z.ZodString>;
@@ -262,7 +262,7 @@ export declare const apiContracts: {
     readonly 'bonds.available': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{}, z.core.$strict>;
@@ -316,7 +316,7 @@ export declare const apiContracts: {
     readonly 'bonds.create': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             bondId: z.ZodString;
@@ -381,7 +381,7 @@ export declare const apiContracts: {
     readonly 'bonds.get': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -435,7 +435,7 @@ export declare const apiContracts: {
     readonly 'bonds.onchain': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -449,7 +449,7 @@ export declare const apiContracts: {
     readonly 'bonds.issueOnchain': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -465,7 +465,7 @@ export declare const apiContracts: {
     readonly 'bonds.publish': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             paymentMethods: z.ZodOptional<z.ZodArray<z.ZodEnum<{
@@ -525,7 +525,7 @@ export declare const apiContracts: {
     readonly 'bonds.sorobanDetails': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -543,7 +543,7 @@ export declare const apiContracts: {
     readonly 'bonds.freeze': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -597,7 +597,7 @@ export declare const apiContracts: {
     readonly 'bonds.unfreeze': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -651,7 +651,7 @@ export declare const apiContracts: {
     readonly 'bonds.uploadDocument': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUnknown;
         params: z.ZodObject<{
@@ -666,7 +666,7 @@ export declare const apiContracts: {
     readonly 'bonds.hash': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             content: z.ZodString;
@@ -677,10 +677,107 @@ export declare const apiContracts: {
             hash: z.ZodString;
         }, z.core.$strip>;
     };
+    readonly 'bonds.summary': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodUndefined;
+        params: z.ZodObject<{
+            tokenId: z.ZodString;
+        }, z.core.$strip>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            bondId: z.ZodString;
+            contractId: z.ZodString;
+            title: z.ZodString;
+            version: z.ZodString;
+            clauses: z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                order: z.ZodNumber;
+                title: z.ZodString;
+                category: z.ZodEnum<{
+                    transferencia: "transferencia";
+                    otro: "otro";
+                    partes: "partes";
+                    objeto: "objeto";
+                    pago: "pago";
+                    garantia: "garantia";
+                    plazo: "plazo";
+                    incumplimiento: "incumplimiento";
+                    jurisdiccion: "jurisdiccion";
+                    firmas: "firmas";
+                }>;
+                legalText: z.ZodString;
+                references: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            }, z.core.$loose>>;
+            generatedAt: z.ZodString;
+            country: z.ZodEnum<{
+                CR: "CR";
+                CO: "CO";
+                BR: "BR";
+                AR: "AR";
+            }>;
+            amount: z.ZodObject<{
+                value: z.ZodNullable<z.ZodNumber>;
+                currency: z.ZodNullable<z.ZodString>;
+                unknown: z.ZodBoolean;
+            }, z.core.$strip>;
+            conditions: z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                description: z.ZodString;
+                sourceClauseId: z.ZodString;
+            }, z.core.$strip>>;
+            obligations: z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                role: z.ZodEnum<{
+                    tse: "tse";
+                    comprador: "comprador";
+                    vendedor: "vendedor";
+                }>;
+                description: z.ZodString;
+                sourceClauseId: z.ZodString;
+            }, z.core.$strip>>;
+            keyDates: z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                kind: z.ZodEnum<{
+                    issue_date: "issue_date";
+                    maturity_date: "maturity_date";
+                    transfer_requested: "transfer_requested";
+                    transfer_last_update: "transfer_last_update";
+                    released: "released";
+                    version_published: "version_published";
+                }>;
+                label: z.ZodString;
+                date: z.ZodNullable<z.ZodString>;
+                unknown: z.ZodBoolean;
+            }, z.core.$strip>>;
+            status: z.ZodEnum<{
+                readonly BORRADOR: "borrador";
+                readonly VIGENTE: "vigente";
+                readonly EN_NEGOCIACION: "en_negociacion";
+                readonly EN_ESCROW: "en_escrow";
+                readonly LIBERADO: "liberado";
+                readonly CANCELADO: "cancelado";
+                readonly CONGELADO: "congelado";
+            }>;
+            attentionFlags: z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                severity: z.ZodEnum<{
+                    info: "info";
+                    warning: "warning";
+                    critical: "critical";
+                }>;
+                kind: z.ZodString;
+                message: z.ZodString;
+                sourceClauseId: z.ZodOptional<z.ZodString>;
+            }, z.core.$strip>>;
+        }, z.core.$loose>;
+    };
     readonly 'transfers.list': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{}, z.core.$strict>;
@@ -731,7 +828,7 @@ export declare const apiContracts: {
     readonly 'transfers.create': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             bondTokenId: z.ZodString;
@@ -785,7 +882,7 @@ export declare const apiContracts: {
     readonly 'transfers.get': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -830,7 +927,7 @@ export declare const apiContracts: {
     readonly 'transfers.accept': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -878,7 +975,7 @@ export declare const apiContracts: {
     readonly 'transfers.reject': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -892,7 +989,7 @@ export declare const apiContracts: {
     readonly 'transfers.counter': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             amount: z.ZodCoercedNumber<unknown>;
@@ -940,7 +1037,7 @@ export declare const apiContracts: {
     readonly 'transfers.acceptCounter': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -988,7 +1085,7 @@ export declare const apiContracts: {
     readonly 'transfers.payment': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             evidence: z.ZodOptional<z.ZodString>;
@@ -1036,7 +1133,7 @@ export declare const apiContracts: {
     readonly 'transfers.validate': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -1081,7 +1178,7 @@ export declare const apiContracts: {
     readonly 'transfers.release': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -1096,7 +1193,7 @@ export declare const apiContracts: {
     readonly 'transfers.cancel': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -1110,7 +1207,7 @@ export declare const apiContracts: {
     readonly 'transfers.buildXdr': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -1125,7 +1222,7 @@ export declare const apiContracts: {
     readonly 'transfers.submitXdr': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             signedXdr: z.ZodString;
@@ -1142,7 +1239,7 @@ export declare const apiContracts: {
     readonly 'transfers.instantBuy.buildXdr': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -1157,7 +1254,7 @@ export declare const apiContracts: {
     readonly 'transfers.instantBuy.submitXdr': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             signedXdr: z.ZodString;
@@ -1174,7 +1271,7 @@ export declare const apiContracts: {
     readonly 'transfers.walletPayment.buildXdr': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -1189,7 +1286,7 @@ export declare const apiContracts: {
     readonly 'transfers.walletPayment.submitXdr': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             signedXdr: z.ZodString;
@@ -1206,7 +1303,7 @@ export declare const apiContracts: {
     readonly 'transfers.requestReturn': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             reason: z.ZodOptional<z.ZodString>;
@@ -1253,7 +1350,7 @@ export declare const apiContracts: {
     readonly 'transfers.approveReturn': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             notes: z.ZodOptional<z.ZodString>;
@@ -1270,7 +1367,7 @@ export declare const apiContracts: {
     readonly 'transfers.rejectReturn': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             notes: z.ZodOptional<z.ZodString>;
@@ -1317,7 +1414,7 @@ export declare const apiContracts: {
     readonly 'reports.list': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{}, z.core.$strict>;
@@ -1350,7 +1447,7 @@ export declare const apiContracts: {
     readonly 'reports.create': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             title: z.ZodString;
@@ -1390,7 +1487,7 @@ export declare const apiContracts: {
     readonly 'reports.get': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -1425,7 +1522,7 @@ export declare const apiContracts: {
     readonly 'reports.review': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             status: z.ZodEnum<{
@@ -1469,7 +1566,7 @@ export declare const apiContracts: {
     readonly 'reports.assign': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             reviewerId: z.ZodString;
@@ -1503,10 +1600,374 @@ export declare const apiContracts: {
             updated_at: z.ZodString;
         }, z.core.$loose>;
     };
+    readonly 'contracts.templates.list': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodUndefined;
+        params: z.ZodObject<{}, z.core.$strict>;
+        query: z.ZodObject<{
+            country: z.ZodOptional<z.ZodEnum<{
+                CR: "CR";
+                CO: "CO";
+                BR: "BR";
+                AR: "AR";
+            }>>;
+        }, z.core.$loose>;
+        response: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            key: z.ZodString;
+            country: z.ZodEnum<{
+                CR: "CR";
+                CO: "CO";
+                BR: "BR";
+                AR: "AR";
+            }>;
+            name: z.ZodString;
+            description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            createdAt: z.ZodString;
+            updatedAt: z.ZodString;
+        }, z.core.$loose>>;
+    };
+    readonly 'contracts.templates.create': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodObject<{
+            key: z.ZodString;
+            country: z.ZodEnum<{
+                CR: "CR";
+                CO: "CO";
+                BR: "BR";
+                AR: "AR";
+            }>;
+            name: z.ZodString;
+            description: z.ZodOptional<z.ZodString>;
+        }, z.core.$strict>;
+        params: z.ZodObject<{}, z.core.$strict>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            id: z.ZodString;
+            key: z.ZodString;
+            country: z.ZodEnum<{
+                CR: "CR";
+                CO: "CO";
+                BR: "BR";
+                AR: "AR";
+            }>;
+            name: z.ZodString;
+            description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            createdAt: z.ZodString;
+            updatedAt: z.ZodString;
+        }, z.core.$loose>;
+    };
+    readonly 'contracts.templates.versions.list': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodUndefined;
+        params: z.ZodObject<{
+            id: z.ZodString;
+        }, z.core.$strip>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            templateId: z.ZodString;
+            versionNumber: z.ZodNumber;
+            status: z.ZodEnum<{
+                draft: "draft";
+                published: "published";
+                archived: "archived";
+            }>;
+            clauseKeys: z.ZodArray<z.ZodString>;
+            notes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            createdBy: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            createdAt: z.ZodString;
+            publishedAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        }, z.core.$loose>>;
+    };
+    readonly 'contracts.templates.versions.create': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodObject<{
+            clauseKeys: z.ZodArray<z.ZodString>;
+            notes: z.ZodOptional<z.ZodString>;
+        }, z.core.$strict>;
+        params: z.ZodObject<{
+            id: z.ZodString;
+        }, z.core.$strip>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            id: z.ZodString;
+            templateId: z.ZodString;
+            versionNumber: z.ZodNumber;
+            status: z.ZodEnum<{
+                draft: "draft";
+                published: "published";
+                archived: "archived";
+            }>;
+            clauseKeys: z.ZodArray<z.ZodString>;
+            notes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            createdBy: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            createdAt: z.ZodString;
+            publishedAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        }, z.core.$loose>;
+    };
+    readonly 'contracts.versions.diff': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodUndefined;
+        params: z.ZodObject<{}, z.core.$strict>;
+        query: z.ZodObject<{
+            from: z.ZodString;
+            to: z.ZodString;
+        }, z.core.$loose>;
+        response: z.ZodObject<{
+            fromVersionId: z.ZodString;
+            toVersionId: z.ZodString;
+            added: z.ZodArray<z.ZodObject<{
+                clauseKey: z.ZodString;
+                title: z.ZodString;
+                order: z.ZodNumber;
+            }, z.core.$strip>>;
+            removed: z.ZodArray<z.ZodObject<{
+                clauseKey: z.ZodString;
+                title: z.ZodString;
+                order: z.ZodNumber;
+            }, z.core.$strip>>;
+            changed: z.ZodArray<z.ZodObject<{
+                clauseKey: z.ZodString;
+                title: z.ZodString;
+                fromOrder: z.ZodNumber;
+                toOrder: z.ZodNumber;
+                bodyChanged: z.ZodBoolean;
+            }, z.core.$strip>>;
+            unchanged: z.ZodArray<z.ZodObject<{
+                clauseKey: z.ZodString;
+                title: z.ZodString;
+                order: z.ZodNumber;
+            }, z.core.$strip>>;
+        }, z.core.$strip>;
+    };
+    readonly 'contracts.versions.get': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodUndefined;
+        params: z.ZodObject<{
+            versionId: z.ZodString;
+        }, z.core.$strip>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            id: z.ZodString;
+            templateId: z.ZodString;
+            versionNumber: z.ZodNumber;
+            status: z.ZodEnum<{
+                draft: "draft";
+                published: "published";
+                archived: "archived";
+            }>;
+            clauseKeys: z.ZodArray<z.ZodString>;
+            notes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            createdBy: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            createdAt: z.ZodString;
+            publishedAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            clauses: z.ZodArray<z.ZodObject<{
+                id: z.ZodString;
+                clauseKey: z.ZodString;
+                category: z.ZodEnum<{
+                    transferencia: "transferencia";
+                    otro: "otro";
+                    partes: "partes";
+                    objeto: "objeto";
+                    pago: "pago";
+                    garantia: "garantia";
+                    plazo: "plazo";
+                    incumplimiento: "incumplimiento";
+                    jurisdiccion: "jurisdiccion";
+                    firmas: "firmas";
+                }>;
+                title: z.ZodString;
+                bodyTemplate: z.ZodString;
+                parameters: z.ZodArray<z.ZodString>;
+                locale: z.ZodString;
+                createdAt: z.ZodString;
+                updatedAt: z.ZodString;
+            }, z.core.$loose>>;
+        }, z.core.$loose>;
+    };
+    readonly 'contracts.versions.publish': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodUndefined;
+        params: z.ZodObject<{
+            versionId: z.ZodString;
+        }, z.core.$strip>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            id: z.ZodString;
+            templateId: z.ZodString;
+            versionNumber: z.ZodNumber;
+            status: z.ZodEnum<{
+                draft: "draft";
+                published: "published";
+                archived: "archived";
+            }>;
+            clauseKeys: z.ZodArray<z.ZodString>;
+            notes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            createdBy: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            createdAt: z.ZodString;
+            publishedAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        }, z.core.$loose>;
+    };
+    readonly 'contracts.clauses.list': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodUndefined;
+        params: z.ZodObject<{}, z.core.$strict>;
+        query: z.ZodObject<{
+            category: z.ZodOptional<z.ZodEnum<{
+                transferencia: "transferencia";
+                otro: "otro";
+                partes: "partes";
+                objeto: "objeto";
+                pago: "pago";
+                garantia: "garantia";
+                plazo: "plazo";
+                incumplimiento: "incumplimiento";
+                jurisdiccion: "jurisdiccion";
+                firmas: "firmas";
+            }>>;
+        }, z.core.$loose>;
+        response: z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            clauseKey: z.ZodString;
+            category: z.ZodEnum<{
+                transferencia: "transferencia";
+                otro: "otro";
+                partes: "partes";
+                objeto: "objeto";
+                pago: "pago";
+                garantia: "garantia";
+                plazo: "plazo";
+                incumplimiento: "incumplimiento";
+                jurisdiccion: "jurisdiccion";
+                firmas: "firmas";
+            }>;
+            title: z.ZodString;
+            bodyTemplate: z.ZodString;
+            parameters: z.ZodArray<z.ZodString>;
+            locale: z.ZodString;
+            createdAt: z.ZodString;
+            updatedAt: z.ZodString;
+        }, z.core.$loose>>;
+    };
+    readonly 'contracts.clauses.create': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodObject<{
+            clauseKey: z.ZodString;
+            category: z.ZodEnum<{
+                transferencia: "transferencia";
+                otro: "otro";
+                partes: "partes";
+                objeto: "objeto";
+                pago: "pago";
+                garantia: "garantia";
+                plazo: "plazo";
+                incumplimiento: "incumplimiento";
+                jurisdiccion: "jurisdiccion";
+                firmas: "firmas";
+            }>;
+            title: z.ZodString;
+            bodyTemplate: z.ZodString;
+            parameters: z.ZodOptional<z.ZodArray<z.ZodString>>;
+            locale: z.ZodOptional<z.ZodString>;
+        }, z.core.$strict>;
+        params: z.ZodObject<{}, z.core.$strict>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            id: z.ZodString;
+            clauseKey: z.ZodString;
+            category: z.ZodEnum<{
+                transferencia: "transferencia";
+                otro: "otro";
+                partes: "partes";
+                objeto: "objeto";
+                pago: "pago";
+                garantia: "garantia";
+                plazo: "plazo";
+                incumplimiento: "incumplimiento";
+                jurisdiccion: "jurisdiccion";
+                firmas: "firmas";
+            }>;
+            title: z.ZodString;
+            bodyTemplate: z.ZodString;
+            parameters: z.ZodArray<z.ZodString>;
+            locale: z.ZodString;
+            createdAt: z.ZodString;
+            updatedAt: z.ZodString;
+        }, z.core.$loose>;
+    };
+    readonly 'contracts.document.get': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodUndefined;
+        params: z.ZodObject<{
+            bondId: z.ZodString;
+        }, z.core.$strip>;
+        query: z.ZodObject<{
+            versionId: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>;
+        response: z.ZodObject<{
+            bondId: z.ZodString;
+            templateId: z.ZodString;
+            versionId: z.ZodString;
+            versionNumber: z.ZodNumber;
+            title: z.ZodString;
+            sections: z.ZodArray<z.ZodObject<{
+                clauseKey: z.ZodString;
+                order: z.ZodNumber;
+                title: z.ZodString;
+                category: z.ZodEnum<{
+                    transferencia: "transferencia";
+                    otro: "otro";
+                    partes: "partes";
+                    objeto: "objeto";
+                    pago: "pago";
+                    garantia: "garantia";
+                    plazo: "plazo";
+                    incumplimiento: "incumplimiento";
+                    jurisdiccion: "jurisdiccion";
+                    firmas: "firmas";
+                }>;
+                text: z.ZodString;
+                missingParameters: z.ZodArray<z.ZodString>;
+            }, z.core.$strip>>;
+            fullText: z.ZodString;
+            generatedAt: z.ZodString;
+        }, z.core.$strip>;
+    };
     readonly 'notifications.list': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{}, z.core.$strict>;
@@ -1539,7 +2000,7 @@ export declare const apiContracts: {
     readonly 'notifications.readAll': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{}, z.core.$strict>;
@@ -1551,7 +2012,7 @@ export declare const apiContracts: {
     readonly 'notifications.read': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{
@@ -1565,7 +2026,7 @@ export declare const apiContracts: {
     readonly 'users.me': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{}, z.core.$strict>;
@@ -1593,7 +2054,7 @@ export declare const apiContracts: {
     readonly 'users.updateMe': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             full_name: z.ZodOptional<z.ZodString>;
@@ -1623,7 +2084,7 @@ export declare const apiContracts: {
     readonly 'users.updateWallet': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             publicKey: z.ZodString;
@@ -1638,7 +2099,7 @@ export declare const apiContracts: {
     readonly 'users.list': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{}, z.core.$strict>;
@@ -1666,7 +2127,7 @@ export declare const apiContracts: {
     readonly 'users.recipients': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodUndefined;
         params: z.ZodObject<{}, z.core.$strict>;
@@ -1688,7 +2149,7 @@ export declare const apiContracts: {
     readonly 'users.setRole': {
         method: HttpMethod;
         path: string;
-        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users";
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
         auth: boolean;
         body: z.ZodObject<{
             role: z.ZodEnum<{

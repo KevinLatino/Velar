@@ -282,8 +282,9 @@ contrato legal; no lo reemplaza.** Consume los endpoints públicos del backend
 - `app/tse/bono/[tokenId]/` — lector embebido en el detalle del bono.
 - `app/verificar/[id]/` (público) — lector embebido bajo la trazabilidad.
 
-> Nota: el contrato estructurado proviene de un fixture hasta que aterrice el epic #38 (Contract
-> intelligence & assembly); el backend inyecta el `bondId` solicitado.
+> Nota: el contrato estructurado proviene de la derivación real del epic #38 (ver §16); el backend
+> inyecta el `bondId` solicitado.
+
 ## 12. Reporte mensual del partido (issue #40)
 
 Pantallas en `apps/web/app/partido/reportes/` (rol `emisor`). Helpers de UI en
@@ -431,3 +432,43 @@ CSV/PDF, todo sobre `GET /analytics/snapshot`.
 (`docs/AGENTS.md` §5): el `AnalyticsScope` que decide qué partido ve qué se resuelve en
 `AnalyticsService.resolveScope`, nunca en el cliente. Sin `service_role` ni secretos en el
 frontend. Estados de carga/vacío/error en cada sección (no pantallas en blanco).
+
+## 16. Gestión de contrato (issue #38)
+
+UI de gestión del motor de inteligencia de contratos: resumen estructurado (monto, obligaciones
+por parte, condiciones, fechas clave, alertas de atención), previsualización del documento
+ensamblado, y navegador de versiones con diff visual. **Complementa el contrato legal y el lector
+en lenguaje simple (#39, §11); no los reemplaza.**
+
+### Helpers puros — `lib/contract-engine.ts`
+`createContractEngineClient({ baseUrl, fetch })` (mismo patrón que `lib/provenance.ts`):
+`getSummary`, `getDocument`, `listTemplates`, `listVersions`, `getVersion`, `diffVersions`,
+`listClauses`. Más `statusLabel`/`statusTone`, `attentionSeverityTone`, `formatContractAmount`
+(reutiliza `formatMoney` de `@velar/types`, nunca muestra "$0" cuando el monto es `unknown`),
+`buildDiffSummary`, `buildDocumentExportText`. Testeados en `lib/contract-engine.spec.ts` contra
+fixtures — sin backend ni credenciales.
+
+### Componentes — `components/contract-engine/`
+- **`ContractSummaryPanel`** — estado, monto, alertas de atención (`Alert` por severidad),
+  obligaciones agrupadas por parte, condiciones y fechas clave (marca "No disponible" cuando el
+  dato es `unknown`, nunca lo inventa).
+- **`ContractDocumentPreview`** — secciones del documento ensamblado; marca visualmente las que
+  tienen parámetros pendientes; **imprimir** (`window.print()`) y **exportar** (texto plano).
+- **`ContractVersionDiffView`** — diff visual agregadas/eliminadas/modificadas/sin cambios,
+  color-coded con `Badge`.
+- **`ContractVersionBrowser`** — lista de versiones con badge de estado (borrador/publicada/
+  archivada) + selector de dos versiones para comparar, monta `ContractVersionDiffView`.
+- **`ContractEngineExplorer`** — contenedor con fetch (resumen, documento, versiones) y `Tabs`
+  (Resumen / Documento / Versiones) que compone lo anterior. Estados de carga/error/vacío en
+  cada pestaña.
+- **`ContractEngineDialog`** — modal (`components/ui/Modal.tsx`) que hospeda el explorer bajo
+  demanda.
+
+### Dónde está integrado
+- `app/tse/bono/[tokenId]/` — explorer embebido en una sección "Gestión de contrato", junto al
+  lector en lenguaje simple.
+- `app/partido/mis-bonos/` — botón **Gestión de contrato** por bono → abre el modal, junto al
+  botón **Contrato** (lector) existente.
+
+Localizado (es), responsive y accesible (hereda foco atrapado/Escape de `Modal`; `Tabs` con
+navegación por teclado). Nunca se usa `service_role` ni secretos en el cliente.
