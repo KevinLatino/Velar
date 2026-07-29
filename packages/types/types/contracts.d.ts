@@ -1335,8 +1335,8 @@ export declare const apiContracts: {
             status: z.ZodEnum<{
                 aprobado: "aprobado";
                 enviado: "enviado";
-                revisado: "revisado";
                 observado: "observado";
+                revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
             reviewed_at: z.ZodNullable<z.ZodString>;
@@ -1373,8 +1373,8 @@ export declare const apiContracts: {
             status: z.ZodEnum<{
                 aprobado: "aprobado";
                 enviado: "enviado";
-                revisado: "revisado";
                 observado: "observado";
+                revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
             reviewed_at: z.ZodNullable<z.ZodString>;
@@ -1406,8 +1406,8 @@ export declare const apiContracts: {
             status: z.ZodEnum<{
                 aprobado: "aprobado";
                 enviado: "enviado";
-                revisado: "revisado";
                 observado: "observado";
+                revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
             reviewed_at: z.ZodNullable<z.ZodString>;
@@ -1424,8 +1424,8 @@ export declare const apiContracts: {
         body: z.ZodObject<{
             status: z.ZodEnum<{
                 aprobado: "aprobado";
-                revisado: "revisado";
                 observado: "observado";
+                revisado: "revisado";
             }>;
             notes: z.ZodOptional<z.ZodString>;
         }, z.core.$strict>;
@@ -1446,8 +1446,8 @@ export declare const apiContracts: {
             status: z.ZodEnum<{
                 aprobado: "aprobado";
                 enviado: "enviado";
-                revisado: "revisado";
                 observado: "observado";
+                revisado: "revisado";
             }>;
             reviewed_by: z.ZodNullable<z.ZodString>;
             reviewed_at: z.ZodNullable<z.ZodString>;
@@ -1480,6 +1480,7 @@ export declare const apiContracts: {
                     readonly REPORT_OBSERVED: "report_observed";
                     readonly REPORT_APPROVED: "report_approved";
                     readonly REPORT_RESUBMITTED: "report_resubmitted";
+                    readonly ANALYTICS_THRESHOLD_BREACHED: "analytics_threshold_breached";
                 }>;
                 payload: z.ZodRecord<z.ZodString, z.ZodUnknown>;
                 read: z.ZodBoolean;

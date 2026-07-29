@@ -14,6 +14,7 @@ export declare const NotificationType: {
     readonly REPORT_OBSERVED: "report_observed";
     readonly REPORT_APPROVED: "report_approved";
     readonly REPORT_RESUBMITTED: "report_resubmitted";
+    readonly ANALYTICS_THRESHOLD_BREACHED: "analytics_threshold_breached";
 };
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
 export interface Notification {

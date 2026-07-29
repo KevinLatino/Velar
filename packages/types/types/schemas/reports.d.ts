@@ -2,8 +2,8 @@ import { z } from 'zod';
 export declare const reportStatusSchema: z.ZodEnum<{
     aprobado: "aprobado";
     enviado: "enviado";
-    revisado: "revisado";
     observado: "observado";
+    revisado: "revisado";
 }>;
 export declare const createReportRequestSchema: z.ZodObject<{
     title: z.ZodString;
@@ -16,8 +16,8 @@ export declare const createReportRequestSchema: z.ZodObject<{
 export declare const reviewReportRequestSchema: z.ZodObject<{
     status: z.ZodEnum<{
         aprobado: "aprobado";
-        revisado: "revisado";
         observado: "observado";
+        revisado: "revisado";
     }>;
     notes: z.ZodOptional<z.ZodString>;
 }, z.core.$strict>;
@@ -34,8 +34,8 @@ export declare const reportRowSchema: z.ZodObject<{
     status: z.ZodEnum<{
         aprobado: "aprobado";
         enviado: "enviado";
-        revisado: "revisado";
         observado: "observado";
+        revisado: "revisado";
     }>;
     reviewed_by: z.ZodNullable<z.ZodString>;
     reviewed_at: z.ZodNullable<z.ZodString>;

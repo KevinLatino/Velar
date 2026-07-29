@@ -17,4 +17,5 @@ exports.NotificationType = {
     REPORT_OBSERVED: 'report_observed',
     REPORT_APPROVED: 'report_approved',
     REPORT_RESUBMITTED: 'report_resubmitted',
+    ANALYTICS_THRESHOLD_BREACHED: 'analytics_threshold_breached',
 };
