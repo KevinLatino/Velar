@@ -30,6 +30,8 @@ __exportStar(require("./contract-reader"), exports);
 __exportStar(require("./fixtures/contract-reader"), exports);
 __exportStar(require("./provenance"), exports);
 __exportStar(require("./fixtures/provenance"), exports);
+__exportStar(require("./analytics"), exports);
+__exportStar(require("./fixtures/analytics"), exports);
 __exportStar(require("./schemas/common"), exports);
 __exportStar(require("./schemas/auth"), exports);
 __exportStar(require("./schemas/bonds"), exports);

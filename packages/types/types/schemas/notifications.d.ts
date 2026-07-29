@@ -14,6 +14,7 @@ export declare const notificationRowSchema: z.ZodObject<{
         readonly REPORT_OBSERVED: "report_observed";
         readonly REPORT_APPROVED: "report_approved";
         readonly REPORT_RESUBMITTED: "report_resubmitted";
+        readonly ANALYTICS_THRESHOLD_BREACHED: "analytics_threshold_breached";
     }>;
     payload: z.ZodRecord<z.ZodString, z.ZodUnknown>;
     read: z.ZodBoolean;
@@ -35,6 +36,7 @@ export declare const notificationsResponseSchema: z.ZodObject<{
             readonly REPORT_OBSERVED: "report_observed";
             readonly REPORT_APPROVED: "report_approved";
             readonly REPORT_RESUBMITTED: "report_resubmitted";
+            readonly ANALYTICS_THRESHOLD_BREACHED: "analytics_threshold_breached";
         }>;
         payload: z.ZodRecord<z.ZodString, z.ZodUnknown>;
         read: z.ZodBoolean;
