@@ -1,9 +1,9 @@
 'use client';
-import { TSEShell } from '../../../components/TSEShell';
+import { PartidoShell } from '../../../components/PartidoShell';
 import { useSession } from '../../../lib/api';
 import { AnalyticsDashboard } from '../../../components/analytics/AnalyticsDashboard';
 
-export default function AnalyticsPage() {
+export default function PartidoAnalyticsPage() {
   const { token, me, loading, error } = useSession();
 
   if (loading || !token || !me) {
@@ -15,8 +15,8 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <TSEShell me={me}>
-      <AnalyticsDashboard token={token} showPartyControls />
-    </TSEShell>
+    <PartidoShell me={me}>
+      <AnalyticsDashboard token={token} showPartyControls={false} />
+    </PartidoShell>
   );
 }
