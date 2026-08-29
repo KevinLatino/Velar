@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal } from '../ui';
+import { Modal } from '@velar/ui';
 import { ContractEngineExplorer } from './ContractEngineExplorer';
 
 export interface ContractEngineDialogProps {

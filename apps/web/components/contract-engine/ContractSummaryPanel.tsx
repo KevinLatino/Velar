@@ -2,7 +2,7 @@
 
 import { CalendarClock } from 'lucide-react';
 import type { ContractSummary } from '@velar/types';
-import { Alert, Badge, Card, CardHeader, CardTitle, Cluster, Stack } from '../ui';
+import { Alert, Badge, Card, CardHeader, CardTitle, Cluster, Stack } from '@velar/ui';
 import { attentionSeverityTone, formatContractAmount, statusLabel, statusTone } from '../../lib/contract-engine';
 
 const fmtDate = (s?: string | null) =>

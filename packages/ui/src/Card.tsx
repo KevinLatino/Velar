@@ -2,7 +2,7 @@
  * Card — contenedor de superficie. Reutiliza `.velar-card` / `.velar-card-soft`.
  */
 import type { HTMLAttributes, ReactNode } from 'react';
-import { cn } from './cn';
+import { cn } from './cn.js';
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   /** `soft` usa la superficie tenue y radio medio. */
