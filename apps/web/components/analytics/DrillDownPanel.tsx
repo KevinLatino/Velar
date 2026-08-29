@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { TrendingDown, TrendingUp, Users } from 'lucide-react';
-import { Modal } from '@velar/ui';
+import { Modal } from '../ui/Modal';
 import { apiFetch } from '../../lib/api';
 
 const fmtCRC = (n: number) => new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(n || 0);

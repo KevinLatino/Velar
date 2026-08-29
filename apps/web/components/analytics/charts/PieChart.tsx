@@ -1,6 +1,6 @@
 'use client';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
-import { colorVar } from '@velar/ui';
+import { colorVar } from '../../ui/tokens';
 import { ChartFrame, ChartTableFallback, chartTooltipStyle } from './ChartFrame';
 import type { BarDatum } from './BarChart';
 
