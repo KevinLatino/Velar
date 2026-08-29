@@ -1,6 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 @import "tailwindcss";
 
+/*
+ * El design system vive en `packages/ui` (@velar/ui). Tailwind v4 no escanea
+ * fuera de la app ni dentro de node_modules, así que sin este `@source` las
+ * clases usadas SOLO por las primitivas del paquete se purgarían y los
+ * componentes quedarían sin estilos. Apunta al source, no a `dist/`.
+ */
+@source "../../../packages/ui/src";
+
 @theme {
   --font-sans: "Inter", sans-serif;
   --font-display: "Geist", sans-serif;

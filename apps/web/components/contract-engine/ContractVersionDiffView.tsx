@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import type { ContractVersionDiff } from '@velar/types';
-import { Badge, Stack } from '../ui';
+import { Badge, Stack } from '@velar/ui';
 import { buildDiffSummary } from '../../lib/contract-engine';
 
 /** Visual, structured diff between two contract versions (issue #38). */

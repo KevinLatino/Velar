@@ -3,7 +3,7 @@
  * Espaciados en múltiplos de 4px vía la escala de Tailwind (gap-*).
  */
 import type { HTMLAttributes } from 'react';
-import { cn } from './cn';
+import { cn } from './cn.js';
 
 type Gap = 1 | 2 | 3 | 4 | 5 | 6 | 8;
 const GAP: Record<Gap, string> = {
