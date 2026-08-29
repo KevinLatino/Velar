@@ -5,14 +5,13 @@
   "scripts": {
     "dev": "node ../../scripts/dev.mjs",
     "dev:next": "next dev",
-    "prebuild": "npm run build --workspace @velar/types && npm run build --workspace @velar/ui",
+    "prebuild": "npm run build --workspace @velar/types",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "pretypecheck": "npm run build --workspace @velar/types && npm run build --workspace @velar/ui",
     "typecheck": "tsc --noEmit",
     "doctor": "npx react-doctor@latest",
-    "pretest": "npm run build --workspace @velar/types && npm run build --workspace @velar/ui",
+    "pretest": "npm run build --workspace @velar/types",
     "test": "jest --runInBand"
   },
   "dependencies": {
@@ -20,7 +19,6 @@
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.8",
     "@velar/types": "*",
-    "@velar/ui": "*",
     "lucide-react": "^1.17.0",
     "motion": "^12.40.0",
     "next": "16.2.6",

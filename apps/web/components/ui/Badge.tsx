@@ -2,7 +2,7 @@
  * Badge / Tag — etiquetas de estado y metadatos.
  */
 import type { HTMLAttributes, ReactNode } from 'react';
-import { cn } from './cn.js';
+import { cn } from './cn';
 
 type Tone = 'neutral' | 'primary' | 'success' | 'warning' | 'error' | 'info';
 

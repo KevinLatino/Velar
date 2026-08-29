@@ -3,7 +3,7 @@
  * Tabs — navegación por pestañas accesible (role=tablist, flechas, Home/End).
  */
 import { useId, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { cn } from './cn.js';
+import { cn } from './cn';
 
 export interface TabItem {
   id: string;

@@ -31,7 +31,7 @@ import {
   Textarea,
   ThemeSwitcher,
   Tooltip,
-} from '@velar/ui';
+} from '../../components/ui';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

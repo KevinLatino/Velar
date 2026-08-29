@@ -11,7 +11,7 @@ import { useRoleGuard } from '../lib/role-guard';
 import { CountrySelector } from './CountrySelector';
 import { ConnectWalletButton } from './ConnectWalletButton';
 import { StellarNetworkBadge } from './StellarNetworkBadge';
-import { ThemeSwitcher } from '@velar/ui';
+import { ThemeSwitcher } from './ui';
 import { useCountry, DEMO_MODE } from '../lib/country';
 
 const TABS = [

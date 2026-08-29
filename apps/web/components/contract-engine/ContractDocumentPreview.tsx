@@ -2,7 +2,7 @@
 
 import { Download, Printer } from 'lucide-react';
 import type { AssembledContractDocument } from '@velar/types';
-import { Alert, Badge, Button, Cluster, EmptyState, Spinner, Stack } from '@velar/ui';
+import { Alert, Badge, Button, Cluster, EmptyState, Spinner, Stack } from '../ui';
 import { buildDocumentExportText } from '../../lib/contract-engine';
 
 function download(filename: string, content: string) {

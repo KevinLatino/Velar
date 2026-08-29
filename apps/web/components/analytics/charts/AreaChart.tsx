@@ -1,6 +1,6 @@
 'use client';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { colorVar } from '@velar/ui';
+import { colorVar } from '../../ui/tokens';
 import { ChartFrame, ChartTableFallback, chartTooltipStyle } from './ChartFrame';
 import type { SeriesPoint } from './LineChart';
 
