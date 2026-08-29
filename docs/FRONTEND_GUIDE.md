@@ -354,22 +354,51 @@ en el cliente.
 
 ---
 
-## 14. Design System (`components/ui/`)
+## 14. Design System (paquete `@velar/ui`)
 
-Librería interna tipada, accesible y temable. **Preferí estas primitivas antes que
-estilar a mano.** Importá siempre desde el barrel:
+Librería tipada, accesible y temable. Vive en **`packages/ui/`** como paquete del
+workspace, igual que `@velar/types` — ya no dentro de `apps/web`. **Preferí estas
+primitivas antes que estilar a mano.** Importá siempre desde el paquete:
 
 ```tsx
-import { Button, Card, Field, Input, Badge, Modal, Tabs, Stack, useTheme } from '@/components/ui';
+import { Button, Card, Field, Input, Badge, Modal, Tabs, Stack, useTheme } from '@velar/ui';
 ```
 
+No importes archivos sueltos (`@velar/ui/dist/Button`): el único punto de entrada
+público es el barrel.
+
+### El paquete
+- Fuente en `packages/ui/src/`, build con `npm run build --workspace @velar/ui` (emite
+  JS + `.d.ts` a `packages/ui/dist/`, que está gitignored).
+- `apps/web` lo declara como dependencia workspace (`"@velar/ui": "*"`) y sus scripts
+  `prebuild`/`pretypecheck`/`pretest` lo compilan antes, así que no hay que buildear a mano.
+- Emite **ESM**, no CommonJS: el emit CJS de `tsc` antepone `"use strict"` a la directiva
+  `'use client'` y Next deja de reconocer el boundary de cliente. Si alguna vez movés esto
+  a CJS, los componentes interactivos se rompen en runtime sin fallar el build.
+- `next.config.ts` lo incluye en `transpilePackages`.
+
+### Tailwind: el paquete tiene que estar en el `@source`
+Tailwind v4 escanea la app, no `packages/`. Por eso `app/globals.css` declara:
+
+```css
+@source "../../../packages/ui/src";
+```
+
+Sin esa línea, las clases que **solo** usan las primitivas del paquete se purgan y los
+componentes quedan sin estilos — el build pasa igual, así que el fallo es silencioso.
+Apunta al *source*, nunca a `dist/`.
+
 ### Tokens (fuente de verdad)
-- Los valores viven en `app/globals.css` (`@theme` + `:root`) como variables CSS.
-- Espejo tipado en `components/ui/tokens.ts` para consumir desde TS/JS (charts, estilos inline).
+- Los valores viven en `apps/web/app/globals.css` (`@theme` + `:root`) como variables CSS.
+  **No se duplican en el paquete**: `@velar/ui` los consume vía `var()`.
+- Espejo tipado en `packages/ui/src/tokens.ts` para consumir desde TS/JS (charts, estilos inline).
 - **Para colores en runtime usá `colorVar('primary')`, no el hex literal** — así respeta el tema.
 
 ### Theming (claro/oscuro + país)
 - `ThemeProvider` (ya montado en `AppProviders`) refleja `data-theme` y `data-country` en `<html>`.
+- **El país llega por prop**, no desde un contexto: `<ThemeProvider country={country}>`. El
+  design system no conoce `lib/country`, para que el paquete sea consumible por cualquier
+  app del monorepo. En `apps/web` el puente es `ThemeWithCountry` en `AppProviders.tsx`.
 - `useTheme()` → `{ theme, setTheme, toggleTheme }`. `<ThemeSwitcher />` es el botón listo para usar.
 - El tema persiste en `localStorage` y se aplica antes del primer paint (sin parpadeo).
 - Dark mode y branding por país se resuelven **solo** sobreescribiendo variables CSS; no dupliques valores.
@@ -389,7 +418,10 @@ Galería viva en **`/design-system`** (cada variante + estado).
 4. Para tarjetas/badges/inputs/tablas usá las primitivas, no clases sueltas repetidas.
 
 ### Cómo extender
-- Nuevo componente → archivo en `components/ui/`, tipado y accesible (label/aria/focus/reduced-motion),
+- Nuevo componente → archivo en `packages/ui/src/`, tipado y accesible (label/aria/focus/reduced-motion),
   exportado en `index.ts`, y agregado a `/design-system`.
+- Si el componente necesita datos de la app (sesión, país, wallet), **no lo importes desde
+  el paquete**: pasalo por prop o por render prop. Una importación desde `packages/ui/` hacia
+  `apps/web/` rompe la independencia del paquete.
 - Nuevo token → declaralo en `globals.css` (con override dark/país si aplica) **y** en `tokens.ts`
   con el mismo nombre. No dejes valores que puedan divergir.
