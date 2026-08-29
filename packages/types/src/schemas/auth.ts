@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { requiredStringSchema } from './common';
 
-export const perspectiveSchema = z.enum(['usuario', 'partido'], { errorMap: () => ({ message: 'validation.enum' }) });
+export const perspectiveSchema = z.enum(['usuario', 'partido'], { error: 'validation.enum' });
 
 export const loginRequestSchema = z.object({
   email: requiredStringSchema.email('validation.email'),
@@ -50,6 +50,42 @@ export const loginResponseSchema = z.object({
   user: z.unknown(),
 }).passthrough();
 
+/* ─── Ciclo de vida de la cuenta (issue #77) ───────────────────────────────── */
+
+export const forgotPasswordRequestSchema = z.object({
+  email: requiredStringSchema.email('validation.email'),
+}).strict();
+
+export const resetPasswordRequestSchema = z.object({
+  /** `token_hash` del enlace de recuperación que Supabase envía por correo. */
+  tokenHash: requiredStringSchema,
+  password: requiredStringSchema.min(8, 'validation.password'),
+}).strict();
+
+export const changeEmailRequestSchema = z.object({
+  email: requiredStringSchema.email('validation.email'),
+}).strict();
+
+/**
+ * Respuesta uniforme de `forgot-password`. Es intencionalmente opaca: se
+ * devuelve lo mismo exista o no la cuenta, para no filtrar qué correos están
+ * registrados (enumeración de usuarios).
+ */
+export const forgotPasswordResponseSchema = z.object({
+  ok: z.literal(true),
+}).strict();
+
+export const accountStatusResponseSchema = z.object({
+  ok: z.literal(true),
+  userId: requiredStringSchema,
+  active: z.boolean(),
+}).strict();
+
 export type LoginRequest = z.input<typeof loginRequestSchema>;
 export type RegisterRequest = z.input<typeof registerRequestSchema>;
 export type RegisterResponse = z.output<typeof registerResponseSchema>;
+export type ForgotPasswordRequest = z.input<typeof forgotPasswordRequestSchema>;
+export type ResetPasswordRequest = z.input<typeof resetPasswordRequestSchema>;
+export type ChangeEmailRequest = z.input<typeof changeEmailRequestSchema>;
+export type ForgotPasswordResponse = z.output<typeof forgotPasswordResponseSchema>;
+export type AccountStatusResponse = z.output<typeof accountStatusResponseSchema>;

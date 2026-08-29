@@ -80,6 +80,6 @@ describe('shared contract boundary', () => {
 
   it('covers every required module, including escrow operations', () => {
     const modules = new Set(Object.values(apiContracts).map((contract) => contract.module));
-    expect(modules).toEqual(new Set(['auth', 'bonds', 'transfers', 'reports', 'escrow', 'notifications', 'users']));
+    expect(modules).toEqual(new Set(['auth', 'bonds', 'transfers', 'reports', 'escrow', 'notifications', 'users', 'contracts']));
   });
 });

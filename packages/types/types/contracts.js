@@ -11,6 +11,7 @@ const notifications_1 = require("./schemas/notifications");
 const reports_1 = require("./schemas/reports");
 const transfers_1 = require("./schemas/transfers");
 const users_1 = require("./schemas/users");
+const contracts_1 = require("./schemas/contracts");
 function endpoint(definition) {
     return definition;
 }
@@ -25,6 +26,9 @@ const transferMutationResponseSchema = zod_1.z.union([transfers_1.transferRowSch
 exports.apiContracts = {
     'auth.register': endpoint({ method: 'POST', path: '/auth/register', module: 'auth', auth: false, body: auth_1.registerRequestSchema, params: noParams, query: noQuery, response: auth_1.registerResponseSchema }),
     'auth.login': endpoint({ method: 'POST', path: '/auth/login', module: 'auth', auth: false, body: auth_1.loginRequestSchema, params: noParams, query: noQuery, response: auth_1.loginResponseSchema }),
+    'auth.forgotPassword': endpoint({ method: 'POST', path: '/auth/forgot-password', module: 'auth', auth: false, body: auth_1.forgotPasswordRequestSchema, params: noParams, query: noQuery, response: auth_1.forgotPasswordResponseSchema }),
+    'auth.resetPassword': endpoint({ method: 'POST', path: '/auth/reset-password', module: 'auth', auth: false, body: auth_1.resetPasswordRequestSchema, params: noParams, query: noQuery, response: auth_1.forgotPasswordResponseSchema }),
+    'auth.changeEmail': endpoint({ method: 'POST', path: '/auth/change-email', module: 'auth', auth: true, body: auth_1.changeEmailRequestSchema, params: noParams, query: noQuery, response: auth_1.forgotPasswordResponseSchema }),
     'bonds.list': endpoint({ method: 'GET', path: '/bonds', module: 'bonds', auth: true, body: noBody, params: noParams, query: bonds_1.bondsQuerySchema, response: (0, common_1.paginatedSchema)(bonds_1.bondRowSchema) }),
     'bonds.requests.list': endpoint({ method: 'GET', path: '/bonds/requests', module: 'bonds', auth: true, body: noBody, params: noParams, query: noQuery, response: zod_1.z.array(bonds_1.bondRequestRowSchema) }),
     'bonds.requests.create': endpoint({ method: 'POST', path: '/bonds/requests', module: 'bonds', auth: true, body: bonds_1.createBondRequestRequestSchema, params: noParams, query: noQuery, response: bonds_1.bondRequestRowSchema }),
@@ -41,6 +45,7 @@ exports.apiContracts = {
     'bonds.unfreeze': endpoint({ method: 'PATCH', path: '/bonds/:tokenId/unfreeze', module: 'bonds', auth: true, body: noBody, params: common_1.paramsTokenIdSchema, query: noQuery, response: bonds_1.bondRowSchema }),
     'bonds.uploadDocument': endpoint({ method: 'POST', path: '/bonds/:tokenId/document', module: 'bonds', auth: true, body: zod_1.z.unknown(), params: common_1.paramsTokenIdSchema, query: noQuery, response: bonds_1.documentUploadResponseSchema }),
     'bonds.hash': endpoint({ method: 'POST', path: '/bonds/hash', module: 'bonds', auth: true, body: bonds_1.hashDocumentRequestSchema, params: noParams, query: noQuery, response: bonds_1.documentHashResponseSchema }),
+    'bonds.summary': endpoint({ method: 'GET', path: '/bonds/:tokenId/summary', module: 'bonds', auth: true, body: noBody, params: common_1.paramsTokenIdSchema, query: noQuery, response: contracts_1.contractSummaryResponseSchema }),
     'transfers.list': endpoint({ method: 'GET', path: '/transfers', module: 'transfers', auth: true, body: noBody, params: noParams, query: common_1.paginationQuerySchema, response: (0, common_1.paginatedSchema)(transfers_1.transferRowSchema) }),
     'transfers.create': endpoint({ method: 'POST', path: '/transfers', module: 'transfers', auth: true, body: transfers_1.createTransferRequestSchema, params: noParams, query: noQuery, response: transfers_1.transferRowSchema }),
     'transfers.get': endpoint({ method: 'GET', path: '/transfers/:id', module: 'transfers', auth: true, body: noBody, params: common_1.paramsIdSchema, query: noQuery, response: transfers_1.transferRowSchema.nullable() }),
@@ -65,6 +70,17 @@ exports.apiContracts = {
     'reports.create': endpoint({ method: 'POST', path: '/reports', module: 'reports', auth: true, body: reports_1.createReportRequestSchema, params: noParams, query: noQuery, response: reports_1.reportRowSchema }),
     'reports.get': endpoint({ method: 'GET', path: '/reports/:id', module: 'reports', auth: true, body: noBody, params: common_1.paramsIdSchema, query: noQuery, response: reports_1.reportRowSchema }),
     'reports.review': endpoint({ method: 'PATCH', path: '/reports/:id/review', module: 'reports', auth: true, body: reports_1.reviewReportRequestSchema, params: common_1.paramsIdSchema, query: noQuery, response: reports_1.reportRowSchema }),
+    'reports.assign': endpoint({ method: 'PATCH', path: '/reports/:id/assign', module: 'reports', auth: true, body: zod_1.z.object({ reviewerId: common_1.idSchema }).strict(), params: common_1.paramsIdSchema, query: noQuery, response: reports_1.reportRowSchema }),
+    'contracts.templates.list': endpoint({ method: 'GET', path: '/contracts/templates', module: 'contracts', auth: true, body: noBody, params: noParams, query: contracts_1.contractTemplatesQuerySchema, response: zod_1.z.array(contracts_1.contractTemplateSchema) }),
+    'contracts.templates.create': endpoint({ method: 'POST', path: '/contracts/templates', module: 'contracts', auth: true, body: contracts_1.createContractTemplateRequestSchema, params: noParams, query: noQuery, response: contracts_1.contractTemplateSchema }),
+    'contracts.templates.versions.list': endpoint({ method: 'GET', path: '/contracts/templates/:id/versions', module: 'contracts', auth: true, body: noBody, params: contracts_1.paramsTemplateIdSchema, query: noQuery, response: zod_1.z.array(contracts_1.contractVersionSummarySchema) }),
+    'contracts.templates.versions.create': endpoint({ method: 'POST', path: '/contracts/templates/:id/versions', module: 'contracts', auth: true, body: contracts_1.createContractVersionRequestSchema, params: contracts_1.paramsTemplateIdSchema, query: noQuery, response: contracts_1.contractVersionSummarySchema }),
+    'contracts.versions.diff': endpoint({ method: 'GET', path: '/contracts/versions/diff', module: 'contracts', auth: true, body: noBody, params: noParams, query: contracts_1.contractVersionDiffQuerySchema, response: contracts_1.contractVersionDiffResponseSchema }),
+    'contracts.versions.get': endpoint({ method: 'GET', path: '/contracts/versions/:versionId', module: 'contracts', auth: true, body: noBody, params: contracts_1.paramsVersionIdSchema, query: noQuery, response: contracts_1.contractVersionDetailSchema }),
+    'contracts.versions.publish': endpoint({ method: 'PATCH', path: '/contracts/versions/:versionId/publish', module: 'contracts', auth: true, body: noBody, params: contracts_1.paramsVersionIdSchema, query: noQuery, response: contracts_1.contractVersionSummarySchema }),
+    'contracts.clauses.list': endpoint({ method: 'GET', path: '/contracts/clauses', module: 'contracts', auth: true, body: noBody, params: noParams, query: contracts_1.contractClausesQuerySchema, response: zod_1.z.array(contracts_1.contractClauseLibraryEntrySchema) }),
+    'contracts.clauses.create': endpoint({ method: 'POST', path: '/contracts/clauses', module: 'contracts', auth: true, body: contracts_1.upsertContractClauseRequestSchema, params: noParams, query: noQuery, response: contracts_1.contractClauseLibraryEntrySchema }),
+    'contracts.document.get': endpoint({ method: 'GET', path: '/contracts/:bondId/document', module: 'contracts', auth: true, body: noBody, params: contracts_1.paramsBondIdSchema, query: contracts_1.contractDocumentQuerySchema, response: contracts_1.assembledContractDocumentResponseSchema }),
     'notifications.list': endpoint({ method: 'GET', path: '/notifications', module: 'notifications', auth: true, body: noBody, params: noParams, query: noQuery, response: notifications_1.notificationsResponseSchema }),
     'notifications.readAll': endpoint({ method: 'PATCH', path: '/notifications/read-all', module: 'notifications', auth: true, body: noBody, params: noParams, query: noQuery, response: common_1.okSchema }),
     'notifications.read': endpoint({ method: 'PATCH', path: '/notifications/:id/read', module: 'notifications', auth: true, body: noBody, params: common_1.paramsIdSchema, query: noQuery, response: common_1.okSchema }),
@@ -74,6 +90,8 @@ exports.apiContracts = {
     'users.list': endpoint({ method: 'GET', path: '/users', module: 'users', auth: true, body: noBody, params: noParams, query: noQuery, response: zod_1.z.array(users_1.profileRowSchema) }),
     'users.recipients': endpoint({ method: 'GET', path: '/users/recompradores', module: 'users', auth: true, body: noBody, params: noParams, query: noQuery, response: zod_1.z.array(users_1.recipientRowSchema) }),
     'users.setRole': endpoint({ method: 'PATCH', path: '/users/:id/role', module: 'users', auth: true, body: users_1.setRoleRequestSchema, params: common_1.paramsIdSchema, query: noQuery, response: users_1.profileRowSchema }),
+    'users.deactivate': endpoint({ method: 'PATCH', path: '/users/:id/deactivate', module: 'users', auth: true, body: noBody, params: common_1.paramsIdSchema, query: noQuery, response: auth_1.accountStatusResponseSchema }),
+    'users.reactivate': endpoint({ method: 'PATCH', path: '/users/:id/reactivate', module: 'users', auth: true, body: noBody, params: common_1.paramsIdSchema, query: noQuery, response: auth_1.accountStatusResponseSchema }),
 };
 function normalizedPath(value) {
     const path = value.split('?')[0].replace(/^https?:\/\/[^/]+/i, '').replace(/^\/api(?=\/|$)/, '');
