@@ -282,8 +282,9 @@ contrato legal; no lo reemplaza.** Consume los endpoints públicos del backend
 - `app/tse/bono/[tokenId]/` — lector embebido en el detalle del bono.
 - `app/verificar/[id]/` (público) — lector embebido bajo la trazabilidad.
 
-> Nota: el contrato estructurado proviene de un fixture hasta que aterrice el epic #38 (Contract
-> intelligence & assembly); el backend inyecta el `bondId` solicitado.
+> Nota: el contrato estructurado proviene de la derivación real del epic #38 (ver §16); el backend
+> inyecta el `bondId` solicitado.
+
 ## 12. Reporte mensual del partido (issue #40)
 
 Pantallas en `apps/web/app/partido/reportes/` (rol `emisor`). Helpers de UI en
@@ -375,6 +376,9 @@ público es el barrel.
 - Emite **ESM**, no CommonJS: el emit CJS de `tsc` antepone `"use strict"` a la directiva
   `'use client'` y Next deja de reconocer el boundary de cliente. Si alguna vez movés esto
   a CJS, los componentes interactivos se rompen en runtime sin fallar el build.
+- Los imports relativos dentro de `src/` llevan extensión `.js` (`from './cn.js'`, aunque el
+  archivo sea `cn.ts`). Es requisito del ESM de Node: sin la extensión el paquete solo
+  resuelve dentro de un bundler y falla al importarlo desde Node pelado o desde tests.
 - `next.config.ts` lo incluye en `transpilePackages`.
 
 ### Tailwind: el paquete tiene que estar en el `@source`
@@ -425,3 +429,81 @@ Galería viva en **`/design-system`** (cada variante + estado).
   `apps/web/` rompe la independencia del paquete.
 - Nuevo token → declaralo en `globals.css` (con override dark/país si aplica) **y** en `tokens.ts`
   con el mismo nombre. No dejes valores que puedan divergir.
+- **Charts (Recharts, §15):** los colores de series/ejes/grid se pasan siempre vía
+  `colorVar('primary')`, etc. — nunca hex literal — para que los gráficos respeten el tema
+  claro/oscuro igual que el resto de la UI.
+
+## 15. Dashboard de analítica & BI (issue #44)
+
+Panel de inteligencia de negocio para TSE (`/tse/analytics`, todo el ecosistema) y partido
+(`/partido/analytics`, solo su propia data — el backend la restringe, el frontend no filtra
+por seguridad). KPIs, 5 tipos de gráfico, filtros, drill-down, vistas guardadas y export
+CSV/PDF, todo sobre `GET /analytics/snapshot`.
+
+### Helpers puros — `lib/analytics/`
+- **`query.ts`** — `AnalyticsQuery` ⇄ `URLSearchParams` (`queryToSearchParams`,
+  `searchParamsToQuery`, `queryToQueryString`). Es lo que se guarda como "vista guardada".
+- **`client.ts`** — wrapper delgado sobre `apiFetch`/`apiDownload` (`lib/api.ts`) — no crea
+  un cliente HTTP paralelo: `fetchSnapshot`, `downloadCsv`/`downloadPdf`,
+  `listSavedViews`/`createSavedView`/`deleteSavedView`, `listAlertRules`/`createAlertRule`/
+  `deleteAlertRule`/`evaluateAlertRule`.
+
+### Componentes — `components/analytics/`
+- **`AnalyticsDashboard`** — el árbol completo (KPIs, filtros, charts, embudo, top bonos,
+  cumplimiento), compartido por ambas páginas vía la prop `showPartyControls` (oculta
+  filtro de país/partido en la vista del partido, que siempre ve solo lo suyo).
+- **`KpiCard`**, **`FilterBar`** (fecha desde/hasta, país, partido, estado, bucket),
+  **`SavedViewsMenu`** (listar/guardar/borrar vistas), **`ExportButtons`** (CSV/PDF),
+  **`DrillDownPanel`** — modal (`components/ui/Modal.tsx`) que, al hacer clic en un "top
+  bono", reutiliza los endpoints legados de detalle (`price-history`/`owners`) para mostrar
+  histórico de precios y cadena de propietarios.
+- **`charts/`** — `BarChart`, `LineChart`, `AreaChart`, `PieChart`, `StackedBarChart`
+  (Recharts). Cada uno se apoya en `ChartFrame`, que agrega `role="img"` + `aria-label` y un
+  `<table className="sr-only">` con los mismos datos como fallback de accesibilidad — no hay
+  toggle, siempre está en el DOM.
+
+### Integración
+`TSEShell`/`PartidoShell` ya tienen el link "Análisis" en el nav. RBAC es 100% backend
+(`docs/AGENTS.md` §5): el `AnalyticsScope` que decide qué partido ve qué se resuelve en
+`AnalyticsService.resolveScope`, nunca en el cliente. Sin `service_role` ni secretos en el
+frontend. Estados de carga/vacío/error en cada sección (no pantallas en blanco).
+
+## 16. Gestión de contrato (issue #38)
+
+UI de gestión del motor de inteligencia de contratos: resumen estructurado (monto, obligaciones
+por parte, condiciones, fechas clave, alertas de atención), previsualización del documento
+ensamblado, y navegador de versiones con diff visual. **Complementa el contrato legal y el lector
+en lenguaje simple (#39, §11); no los reemplaza.**
+
+### Helpers puros — `lib/contract-engine.ts`
+`createContractEngineClient({ baseUrl, fetch })` (mismo patrón que `lib/provenance.ts`):
+`getSummary`, `getDocument`, `listTemplates`, `listVersions`, `getVersion`, `diffVersions`,
+`listClauses`. Más `statusLabel`/`statusTone`, `attentionSeverityTone`, `formatContractAmount`
+(reutiliza `formatMoney` de `@velar/types`, nunca muestra "$0" cuando el monto es `unknown`),
+`buildDiffSummary`, `buildDocumentExportText`. Testeados en `lib/contract-engine.spec.ts` contra
+fixtures — sin backend ni credenciales.
+
+### Componentes — `components/contract-engine/`
+- **`ContractSummaryPanel`** — estado, monto, alertas de atención (`Alert` por severidad),
+  obligaciones agrupadas por parte, condiciones y fechas clave (marca "No disponible" cuando el
+  dato es `unknown`, nunca lo inventa).
+- **`ContractDocumentPreview`** — secciones del documento ensamblado; marca visualmente las que
+  tienen parámetros pendientes; **imprimir** (`window.print()`) y **exportar** (texto plano).
+- **`ContractVersionDiffView`** — diff visual agregadas/eliminadas/modificadas/sin cambios,
+  color-coded con `Badge`.
+- **`ContractVersionBrowser`** — lista de versiones con badge de estado (borrador/publicada/
+  archivada) + selector de dos versiones para comparar, monta `ContractVersionDiffView`.
+- **`ContractEngineExplorer`** — contenedor con fetch (resumen, documento, versiones) y `Tabs`
+  (Resumen / Documento / Versiones) que compone lo anterior. Estados de carga/error/vacío en
+  cada pestaña.
+- **`ContractEngineDialog`** — modal (`components/ui/Modal.tsx`) que hospeda el explorer bajo
+  demanda.
+
+### Dónde está integrado
+- `app/tse/bono/[tokenId]/` — explorer embebido en una sección "Gestión de contrato", junto al
+  lector en lenguaje simple.
+- `app/partido/mis-bonos/` — botón **Gestión de contrato** por bono → abre el modal, junto al
+  botón **Contrato** (lector) existente.
+
+Localizado (es), responsive y accesible (hereda foco atrapado/Escape de `Modal`; `Tabs` con
+navegación por teclado). Nunca se usa `service_role` ni secretos en el cliente.

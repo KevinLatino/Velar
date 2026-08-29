@@ -15,6 +15,35 @@ exports.contractSummaryFixture = {
     title: 'Contrato de transferencia de bono político',
     version: 'v1',
     generatedAt: '2026-07-01T00:00:00.000Z',
+    country: 'CR',
+    amount: { value: 520000, currency: 'CRC', unknown: false },
+    conditions: [
+        {
+            id: 'cond-garantia',
+            description: 'El token permanece en escrow hasta que el Vendedor confirme la recepción del pago.',
+            sourceClauseId: 'cl-4',
+        },
+    ],
+    obligations: [
+        {
+            id: 'obl-comprador-pago',
+            role: 'comprador',
+            description: 'Pagar el monto acordado por el medio declarado y registrar la evidencia del pago.',
+            sourceClauseId: 'cl-3',
+        },
+        {
+            id: 'obl-vendedor-transferencia',
+            role: 'vendedor',
+            description: 'Liberar el token al Comprador una vez confirmado el pago.',
+            sourceClauseId: 'cl-4',
+        },
+    ],
+    keyDates: [
+        { id: 'kd-issue', kind: 'issue_date', label: 'Fecha de emisión', date: '2026-01-15', unknown: false },
+        { id: 'kd-maturity', kind: 'maturity_date', label: 'Fecha de vencimiento', date: '2026-12-31', unknown: false },
+    ],
+    status: 'liberado',
+    attentionFlags: [],
     clauses: [
         {
             id: 'cl-1',

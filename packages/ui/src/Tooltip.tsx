@@ -4,7 +4,7 @@
  * CSS puro para posición; se muestra en focus para soporte de teclado.
  */
 import { useId, useState, type ReactNode } from 'react';
-import { cn } from './cn';
+import { cn } from './cn.js';
 
 type Side = 'top' | 'bottom' | 'left' | 'right';
 

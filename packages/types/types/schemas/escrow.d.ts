@@ -11,10 +11,10 @@ export declare const escrowOperationSchema: z.ZodObject<{
 export declare const escrowStateSchema: z.ZodObject<{
     contractId: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodEnum<{
+        released: "released";
         initialized: "initialized";
         funded: "funded";
         approved: "approved";
-        released: "released";
         refunded: "refunded";
         disputed: "disputed";
     }>>;

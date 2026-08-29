@@ -18,6 +18,7 @@ import {
 } from './schemas/bonds';
 import {
   emptyObjectSchema,
+  idSchema,
   okSchema,
   paginatedSchema,
   paginationQuerySchema,
@@ -48,6 +49,25 @@ import {
   updateWalletRequestSchema,
   walletResponseSchema,
 } from './schemas/users';
+import {
+  assembledContractDocumentResponseSchema,
+  contractClauseLibraryEntrySchema,
+  contractClausesQuerySchema,
+  contractDocumentQuerySchema,
+  contractSummaryResponseSchema,
+  contractTemplateSchema,
+  contractTemplatesQuerySchema,
+  contractVersionDetailSchema,
+  contractVersionDiffQuerySchema,
+  contractVersionDiffResponseSchema,
+  contractVersionSummarySchema,
+  createContractTemplateRequestSchema,
+  createContractVersionRequestSchema,
+  paramsBondIdSchema,
+  paramsTemplateIdSchema,
+  paramsVersionIdSchema,
+  upsertContractClauseRequestSchema,
+} from './schemas/contracts';
 
 export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
@@ -59,7 +79,7 @@ function endpoint<
 >(definition: {
   method: HttpMethod;
   path: string;
-  module: 'auth' | 'bonds' | 'transfers' | 'reports' | 'escrow' | 'notifications' | 'users';
+  module: 'auth' | 'bonds' | 'transfers' | 'reports' | 'escrow' | 'notifications' | 'users' | 'contracts';
   auth: boolean;
   body: TBody;
   params: TParams;
@@ -98,6 +118,7 @@ export const apiContracts = {
   'bonds.unfreeze': endpoint({ method: 'PATCH', path: '/bonds/:tokenId/unfreeze', module: 'bonds', auth: true, body: noBody, params: paramsTokenIdSchema, query: noQuery, response: bondRowSchema }),
   'bonds.uploadDocument': endpoint({ method: 'POST', path: '/bonds/:tokenId/document', module: 'bonds', auth: true, body: z.unknown(), params: paramsTokenIdSchema, query: noQuery, response: documentUploadResponseSchema }),
   'bonds.hash': endpoint({ method: 'POST', path: '/bonds/hash', module: 'bonds', auth: true, body: hashDocumentRequestSchema, params: noParams, query: noQuery, response: documentHashResponseSchema }),
+  'bonds.summary': endpoint({ method: 'GET', path: '/bonds/:tokenId/summary', module: 'bonds', auth: true, body: noBody, params: paramsTokenIdSchema, query: noQuery, response: contractSummaryResponseSchema }),
 
   'transfers.list': endpoint({ method: 'GET', path: '/transfers', module: 'transfers', auth: true, body: noBody, params: noParams, query: paginationQuerySchema, response: paginatedSchema(transferRowSchema) }),
   'transfers.create': endpoint({ method: 'POST', path: '/transfers', module: 'transfers', auth: true, body: createTransferRequestSchema, params: noParams, query: noQuery, response: transferRowSchema }),
@@ -124,6 +145,18 @@ export const apiContracts = {
   'reports.create': endpoint({ method: 'POST', path: '/reports', module: 'reports', auth: true, body: createReportRequestSchema, params: noParams, query: noQuery, response: reportRowSchema }),
   'reports.get': endpoint({ method: 'GET', path: '/reports/:id', module: 'reports', auth: true, body: noBody, params: paramsIdSchema, query: noQuery, response: reportRowSchema }),
   'reports.review': endpoint({ method: 'PATCH', path: '/reports/:id/review', module: 'reports', auth: true, body: reviewReportRequestSchema, params: paramsIdSchema, query: noQuery, response: reportRowSchema }),
+  'reports.assign': endpoint({ method: 'PATCH', path: '/reports/:id/assign', module: 'reports', auth: true, body: z.object({ reviewerId: idSchema }).strict(), params: paramsIdSchema, query: noQuery, response: reportRowSchema }),
+
+  'contracts.templates.list': endpoint({ method: 'GET', path: '/contracts/templates', module: 'contracts', auth: true, body: noBody, params: noParams, query: contractTemplatesQuerySchema, response: z.array(contractTemplateSchema) }),
+  'contracts.templates.create': endpoint({ method: 'POST', path: '/contracts/templates', module: 'contracts', auth: true, body: createContractTemplateRequestSchema, params: noParams, query: noQuery, response: contractTemplateSchema }),
+  'contracts.templates.versions.list': endpoint({ method: 'GET', path: '/contracts/templates/:id/versions', module: 'contracts', auth: true, body: noBody, params: paramsTemplateIdSchema, query: noQuery, response: z.array(contractVersionSummarySchema) }),
+  'contracts.templates.versions.create': endpoint({ method: 'POST', path: '/contracts/templates/:id/versions', module: 'contracts', auth: true, body: createContractVersionRequestSchema, params: paramsTemplateIdSchema, query: noQuery, response: contractVersionSummarySchema }),
+  'contracts.versions.diff': endpoint({ method: 'GET', path: '/contracts/versions/diff', module: 'contracts', auth: true, body: noBody, params: noParams, query: contractVersionDiffQuerySchema, response: contractVersionDiffResponseSchema }),
+  'contracts.versions.get': endpoint({ method: 'GET', path: '/contracts/versions/:versionId', module: 'contracts', auth: true, body: noBody, params: paramsVersionIdSchema, query: noQuery, response: contractVersionDetailSchema }),
+  'contracts.versions.publish': endpoint({ method: 'PATCH', path: '/contracts/versions/:versionId/publish', module: 'contracts', auth: true, body: noBody, params: paramsVersionIdSchema, query: noQuery, response: contractVersionSummarySchema }),
+  'contracts.clauses.list': endpoint({ method: 'GET', path: '/contracts/clauses', module: 'contracts', auth: true, body: noBody, params: noParams, query: contractClausesQuerySchema, response: z.array(contractClauseLibraryEntrySchema) }),
+  'contracts.clauses.create': endpoint({ method: 'POST', path: '/contracts/clauses', module: 'contracts', auth: true, body: upsertContractClauseRequestSchema, params: noParams, query: noQuery, response: contractClauseLibraryEntrySchema }),
+  'contracts.document.get': endpoint({ method: 'GET', path: '/contracts/:bondId/document', module: 'contracts', auth: true, body: noBody, params: paramsBondIdSchema, query: contractDocumentQuerySchema, response: assembledContractDocumentResponseSchema }),
 
   'notifications.list': endpoint({ method: 'GET', path: '/notifications', module: 'notifications', auth: true, body: noBody, params: noParams, query: noQuery, response: notificationsResponseSchema }),
   'notifications.readAll': endpoint({ method: 'PATCH', path: '/notifications/read-all', module: 'notifications', auth: true, body: noBody, params: noParams, query: noQuery, response: okSchema }),

@@ -23,7 +23,7 @@ import {
   type ReactNode,
 } from 'react';
 import { Moon, Sun } from 'lucide-react';
-import { THEMES, type Theme } from './tokens';
+import { THEMES, type Theme } from './tokens.js';
 
 const STORE_KEY = 'velar.theme';
 

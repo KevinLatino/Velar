@@ -52,6 +52,19 @@
 }
 
 :root {
+  /* Tokens que colorVar() promete exponer (components/ui/tokens.ts) pero que
+     Tailwind v4 poda de @theme si ninguna clase utilitaria los referencia
+     (solo se usan vía var() en JS/charts, issue #44). Mismos valores que
+     @theme/[data-theme='dark'] arriba — no son tokens nuevos, solo se
+     garantiza que sobrevivan el build sea cual sea el uso de utilidades. */
+  --color-secondary: #52627A;
+  --color-secondary-container: #D9E6F8;
+  --color-secondary-fixed: #EEF5FF;
+  --color-tertiary: #174EA6;
+  --color-tertiary-container: #2563EB;
+  --color-primary-fixed-dim: #8DBBFF;
+  --color-warning: #B7791F;
+
   --velar-canvas: #F7FAFF;
   --velar-section: #EEF5FF;
   --velar-surface: #FFFFFF;
@@ -80,6 +93,10 @@
    (var(--color-*)) y los helpers .velar-*. No se agregan tokens nuevos: solo
    cambian los valores según el tema activo en <html data-theme="dark">. */
 [data-theme='dark'] {
+  /* Ídem al comentario del :root claro: garantiza que estos tokens de
+     colorVar() sobrevivan la poda de Tailwind también en modo oscuro. */
+  --color-warning: #E0A82E;
+
   --color-primary: #8DBBFF;
   --color-primary-container: #2563EB;
   --color-primary-hover: #3B82F6;

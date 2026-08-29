@@ -5,7 +5,7 @@
  * focus, reduced-motion) para no duplicar estilos y mantener consistencia.
  */
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { cn } from './cn';
+import { cn } from './cn.js';
 
 type Variant = 'primary' | 'ghost' | 'success' | 'danger' | 'warn' | 'ghost-danger';
 type Size = 'sm' | 'md' | 'lg';

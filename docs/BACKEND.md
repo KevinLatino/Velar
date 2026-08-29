@@ -285,8 +285,8 @@ por cláusula y un set de términos clave resaltados. Reglas:
   locale, aliases[], created_at`. **RLS: lectura pública** (`USING (true)`); escritura solo por
   `service_role` (backend). Semilla idempotente con los términos base en español.
 - `ContractsService` lee el glosario vía `SupabaseService` (mockeable en tests) y deriva el lector
-  con las funciones puras. El origen del contrato estructurado es un fixture hasta que aterrice el
-  epic #38 (Contract intelligence & assembly).
+  con las funciones puras. El origen del contrato estructurado es la derivación real del epic #38
+  (ver §11) — ya no un fixture.
 
 ### Endpoints (públicos — también los usa `/verificar/[id]`)
 
@@ -298,8 +298,8 @@ por cláusula y un set de términos clave resaltados. Reglas:
 ### Tipos
 
 En `@velar/types`: `ContractReaderResponse`, `PlainLanguageClause`, `GlossaryTerm`, `ClauseKeyTerm`,
-`ReaderLocale` (reader), y el modelo provisional `ContractSummary`/`ContractClause`/`ClauseCategory`
-(fixture de #38, a reemplazar cuando ese epic aterrice).
+`ReaderLocale` (reader), y el modelo canónico `ContractSummary`/`ContractClause`/`ClauseCategory`
+del epic #38 (ver §11).
 
 ### Comprobación local sin credenciales
 
@@ -366,6 +366,31 @@ Se reemplaza por ClamAV/VirusTotal sin tocar el resto del módulo.
 El TSE (revisión/observación/aprobación) es un **epic aparte**; este issue cubre el
 lado del partido y el dominio compartido de reporte/conciliación.
 
+### TSE governance layer (issue #41)
+
+Capa de gobernanza del TSE sobre el ciclo de vida del reporte: workflow formal con
+doble control y concurrencia optimista, motor de reglas, ABAC, audit log encadenado,
+SLA/escalamiento, analytics de cumplimiento y exports con evidencia de integridad.
+**Solo backend** — sin frontend de command center en este PR. Diseño completo:
+`docs/TSE_GOVERNANCE_ARCHITECTURE.md`.
+
+Endpoints nuevos o extendidos:
+
+```
+PATCH  /api/reports/:id/review          (extendido: expectedVersion, dual control, rechazado)
+PATCH  /api/reports/:id/assign          (admin: asignar revisor)
+GET    /api/reports/lifecycle/:id/findings
+GET    /api/reports/lifecycle/:id/audit-chain
+POST   /api/reports/lifecycle/rules/backtest   (admin)
+POST   /api/sla/check                          (admin)
+GET    /api/compliance-analytics/overview
+GET    /api/compliance-analytics/by-party
+GET    /api/compliance-analytics/reviewer-workload
+GET    /api/compliance-analytics/forecast
+GET    /api/reports/exports/decisions.csv
+GET    /api/reports/exports/decisions.pdf
+```
+
 ## 9. Procedencia y trazabilidad: reconstrucción de historia + integridad (issue #36)
 
 Reconstruye la **historia verificada** de un bono a partir de la bitácora
@@ -401,3 +426,181 @@ trazabilidad) y corre el motor.
 ### Comprobación local sin credenciales
 `npx jest` en `apps/api` (motor + servicio con `AuditService` mockeado). El motor
 no toca la red ni la base; el servicio se prueba con dobles.
+
+## 10. Analítica & BI: motor de agregación, alertas y reportes programados (issue #44)
+
+Plataforma de analítica en tiempo real para el ecosistema de bonos: KPIs, breakdowns
+por partido/país, embudo de transferencias, series de tiempo, cumplimiento de reportes,
+alertas de umbral y exportación CSV/PDF. Mismo patrón que procedencia (§9): motor **puro**
+fixture-testeado, sin tocar Supabase, con el acceso a datos aislado en un servicio propio.
+
+### Motor puro (`analytics/engine/`)
+Funciones sin dependencias, una por archivo:
+- `aggregations.ts` — `aggregateByBondStatus`, `aggregateByParty`, `aggregateByCountry`,
+  `aggregateValueVolume`.
+- `funnel.ts` — `computeTransferFunnel`: cuenta transferencias por etapa usando el índice
+  de `TRANSFER_LIFECYCLE_STEPS` (reutilizado de `@velar/types`, no redefinido). Sin eventos
+  de auditoría en el input, los estados fuera del camino feliz (`contraoferta`, `rechazada`,
+  `cancelada`) se cuentan aparte y no en las etapas.
+- `timeseries.ts` — `bucketByDate` genérico (día/semana/mes, UTC) + series de emisión,
+  transferencias liberadas y "throughput" de escrow (aproximado como `createdAt`→`updatedAt`
+  de transferencias terminales; sin dependencia de `AuditEvent`).
+- `trends.ts` — `periodOverPeriodDelta`, `movingAverage`, `topN`, `detectThresholdAnomalies`.
+- `compliance.ts` — adapta `computeComplianceForPeriods` (`reports/domain/deadlines.ts`,
+  reutilizado, no reimplementado) para agrupar por partido.
+- `alerts.ts` — `evaluateAlertRules`: compara un `AnalyticsSnapshot` contra reglas por
+  dot-path de métrica (`valueVolume.totalVolumeMoved`, etc.), sin I/O.
+- `index.ts` — `buildAnalyticsSnapshot(input, query, scope, now, deadlineConfig)`: aplica
+  `AnalyticsScope` (RBAC ya resuelto, el motor nunca importa `Role`) y `AnalyticsQuery`,
+  compone todo lo anterior. Nunca muta `input`.
+
+### Datos, servicio y RBAC (`analytics/`)
+- `analytics-data.service.ts` — único lugar que toca `SupabaseService.admin.from(...)`;
+  mapea `bonds`/`transfers`/`reports` a los tipos de `@velar/types`. Filtra reportes del
+  modelo legado sin `period_year`/`period_month` (no alimentan cumplimiento).
+- `analytics.service.ts` — `resolveScope(role, partyId)`: TSE/admin ven todo; `emisor` ve
+  solo su partido; el resto no tiene acceso a analítica agregada. También: export CSV/PDF,
+  CRUD de vistas guardadas (`analytics_saved_views`, por dueño) y reglas de alerta
+  (`analytics_alert_rules`, TSE/admin), evaluación de alertas (emite notificaciones vía
+  `NotificationsService.emit` con `NotificationType.ANALYTICS_THRESHOLD_BREACHED`, nunca
+  lanza) y reporte programado manual. Mantiene sin cambios los endpoints legados de
+  drill-down (`bonds/:tokenId/price-history`, `bonds/:tokenId/owners`, `top-bonds`,
+  `legacy-export`) que usan Supabase en vivo con nombres de perfiles.
+- `analytics.controller.ts` — rutas de solo-lectura resueltas por rol dentro del servicio;
+  `@Roles('tse','admin')` (vía `RolesGuard`, global) en configuración privilegiada
+  (reglas de alerta, disparo de reporte programado).
+
+```
+GET    /api/analytics/snapshot                (?from&to&country&partyId&status&bucket)
+GET    /api/analytics/export?format=csv|pdf   (mismo query, snapshot-based)
+GET    /api/analytics/top-bonds               (legado, detalle con nombres)
+GET    /api/analytics/bonds/:tokenId/price-history   (legado, drill-down)
+GET    /api/analytics/bonds/:tokenId/owners          (legado, drill-down)
+GET    /api/analytics/legacy-export?format=csv       (legado, CSV con nombres)
+
+GET    /api/analytics/views | POST | DELETE /:id      (vistas guardadas, por dueño)
+GET    /api/analytics/alert-rules | POST | PATCH | DELETE /:id   (tse/admin)
+POST   /api/analytics/alert-rules/:id/evaluate                    (tse/admin)
+POST   /api/analytics/scheduled-reports/run                       (tse/admin, manual)
+```
+
+### Alertas y reporte programado: interfaz + stub
+`ScheduledReportGenerator` (interfaz + token `SCHEDULED_REPORT_GENERATOR`, mismo patrón
+que el hook de antivirus en `reports/files/file-scanner.ts`) tiene una única implementación
+manual (`ManualScheduledReportGenerator`): genera CSV/PDF del snapshot actual bajo demanda.
+No hay cron ni vendor — se dispara solo por `POST /scheduled-reports/run`.
+
+### Exportación
+- `csv/analytics-csv.ts` — `renderSnapshotCsv`: CSV determinístico del snapshot completo
+  (breakdowns + totales), puro, sin nombres de perfiles (por eso convive con el CSV legado).
+- `pdf/analytics-pdf.ts` — `renderAnalyticsPdf` con `pdf-lib` (JS puro, sin navegador headless).
+  El contenido es determinístico; el orden interno de objetos del PDF no lo es entre
+  ejecuciones, así que las pruebas son **estructurales** (header `%PDF-`, `PDFDocument.load`
+  reabre el archivo, cuenta de páginas), no snapshots de bytes.
+
+### Migración
+`supabase/migrations/20260728000000_analytics_saved_views.sql` — tablas
+`analytics_saved_views` (RLS: dueño) y `analytics_alert_rules` (RLS: TSE/admin). Aditiva,
+no toca ninguna migración existente. Sin vista materializada de pre-agregación en v1 (el
+volumen de datos de la demo no lo justifica todavía).
+
+### Tipos (`@velar/types`)
+`analytics.ts` — `AnalyticsInput`, `AnalyticsQuery`, `AnalyticsScope`, `AnalyticsSnapshot`
+y cada breakdown/serie/trend, `AlertRule`/`AlertBreach`, `SavedView`, `ScheduledReportConfig`/
+`Result`. Fixture en `fixtures/analytics.ts` (`analyticsFixture`, 3 partidos en 2 países,
+todo el embudo de transferencias, cumplimiento on-time/late/missing).
+
+### Comprobación local sin credenciales
+`npx jest src/analytics` en `apps/api` (motor puro fixture-driven, capa de datos y servicio
+con `SupabaseService`/`NotificationsService` mockeados, exportación CSV/PDF determinística).
+
+## 11. Motor de inteligencia de contratos y ensamblado de documentos (issue #38)
+
+Modelo estructurado y versionado del contrato de un bono: biblioteca de cláusulas reutilizables
+y parametrizadas, plantillas por país, y derivación de un `ContractSummary` rico (monto,
+condiciones, obligaciones por rol, fechas clave, estado y alertas de atención) — todo con
+**funciones puras**, mismo patrón que procedencia (§9) y analítica (§10). El resumen
+**complementa** el contrato legal; nunca lo reemplaza. Cierra el `@todo` de #39: el lector de
+contratos ahora consume esta derivación real, ya no el fixture.
+
+### Esquema (migración `20260729000000_contract_engine.sql`)
+- `contract_clauses` — biblioteca de cláusulas reutilizables: `clause_key` (única), `category`
+  (`contract_clause_category`, espeja `ClauseCategory`), `title`, `body_template` (con tokens
+  `{{parametro}}`), `parameters[]`, `locale`. No se muta una cláusula ya referenciada por una
+  versión publicada: se crea una nueva con otro `clause_key`.
+- `contract_templates` — un tipo de contrato por jurisdicción: `key` (única), `country`
+  (`CHECK` contra los países soportados), `name`, `description`.
+- `contract_versions` — revisión de una plantilla: `template_id`, `version_number`, `status`
+  (`draft|published|archived`), `clause_keys[]` (orden lógico), `notes`, `created_by`,
+  `published_at`. Único por `(template_id, version_number)`.
+- RLS: lectura pública en las tres (mismo razonamiento que `glossary_terms`: texto de plantilla
+  legal, no sensible; habilita el lector público en `/verificar/[id]`); sin política de
+  escritura — solo `service_role`. Semilla idempotente: plantilla CR (mismo texto que el fixture
+  que usaba #39) + una segunda, CO, para ejercer de verdad el soporte multi-país.
+
+### Motor puro (`contracts/domain/`)
+- `template.ts` — `resolveClauseTemplate(bodyTemplate, params)`: sustituye tokens `{{param}}`;
+  un parámetro faltante **nunca se inventa** — queda como `[dato no disponible: <param>]` y se
+  reporta en `missingParameters`. Compartido por `summary.ts` y `assembly.ts`.
+- `summary.ts` — `deriveContractSummary(input: ContractSummaryInput): ContractSummary`:
+  - `status`: mapeo puro bono/transferencia → `ContractStatus`, según la máquina de estados de
+    `docs/AGENTS.md` §4.
+  - `amount`: monto de la transferencia activa (no `rechazada`/`cancelada`) o, si no hay, el
+    valor facial del bono; `unknown: true` solo si ninguna de las dos existe.
+  - `obligations`/`conditions`: plantillas mantenidas por `ClauseCategory` (mismo patrón que
+    `plain-language.ts`), con `role: ContractPartyRole` (`tse|vendedor|comprador`, semántico —
+    no el `Role` del sistema, para no requerir lookups de perfil en una función pura). Categorías
+    sin plantilla simplemente no producen obligación/condición (nunca se fabrican).
+  - `keyDates`: fechas de emisión/vencimiento del bono, publicación de la versión, y (si hay
+    transferencia relevante) solicitud/último cambio/liberación; `unknown: true` cuando falta el
+    dato fuente.
+  - `attentionFlags`: reglas determinísticas (mismo enfoque que `analytics/engine/alerts.ts` y
+    `reports/domain/deadlines.ts`) — `frozen`, `approaching_maturity`/`maturity_passed`,
+    `stalled_escrow`, `amount_mismatch`, `missing_key_dates`.
+- `assembly.ts` — `assembleContractDocument(input: AssembleDocumentInput)`: ensamblado
+  determinístico del documento completo desde una versión + parámetros resueltos.
+- `diff.ts` — `diffContractVersions(a, b): ContractVersionDiff`: compara `clauseKeys` ordenados
+  entre dos versiones → `added`/`removed`/`changed` (texto u orden distinto)/`unchanged`.
+
+### Servicio y endpoints
+`ContractsService` reutiliza `AuditService.resolveTokenId`/`getProvenanceInput` (igual que
+`ProvenanceService`) para no reimplementar el mapeo bono/transferencias; solo agrega una consulta
+liviana para `country` (no incluido en ese mapper) y resuelve nombres de partes best-effort
+(perfil/partido) para los parámetros del documento — si no se resuelven, quedan como parámetro
+faltante, nunca se inventan.
+
+`ContractEngineController` (nuevo, separado de `ContractsController` que sigue `@Public()` para
+#39) requiere auth por defecto:
+
+```
+GET   /api/bonds/:tokenId/summary               (reusa la autorización de bonds.findOne)
+GET   /api/contracts/templates                  (?country=)
+POST  /api/contracts/templates                  (tse/admin)
+GET   /api/contracts/templates/:id/versions
+POST  /api/contracts/templates/:id/versions      (tse/admin)
+GET   /api/contracts/versions/diff               (?from=&to=; declarado ANTES de :versionId)
+GET   /api/contracts/versions/:versionId
+PATCH /api/contracts/versions/:versionId/publish (tse/admin)
+GET   /api/contracts/clauses                     (?category=)
+POST  /api/contracts/clauses                     (tse/admin)
+GET   /api/contracts/:bondId/document            (?versionId=)
+```
+
+Todos registrados en `apiContracts` (`@velar/types`, issue #43): request/response tipados y
+cubiertos por `controller-contract-coverage.spec.ts` para `BondsController`.
+
+### Tipos (`@velar/types`)
+`contract-model.ts` — `ContractSummary` extendido (aditivo; los 5 campos que usa #39 no
+cambiaron): `country`, `amount`, `conditions`, `obligations`, `keyDates`, `status`,
+`attentionFlags`, más `ContractPartyRole`/`ContractStatus`/`ContractAttentionFlag`/etc.
+`contract-engine.ts` (nuevo) — `ContractTemplate`, `ContractVersionSummary`/`Detail`,
+`ContractClauseLibraryEntry`, `ContractVersionDiff`, `AssembledContractDocument`, y los inputs
+de las funciones puras. Fixture en `fixtures/contract-engine.ts` (bono, transferencias,
+plantilla CR con 2 versiones para probar el diff).
+
+### Comprobación local sin credenciales
+```bash
+npm run test --workspace apps/api -- --testPathPatterns contracts
+```
+Funciones puras fixture-driven sin mocks (`domain/*.spec.ts`) + servicio con
+`SupabaseService`/`AuditService` mockeados (`contracts.service.spec.ts`).

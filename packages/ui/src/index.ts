@@ -2,32 +2,32 @@
  * VELAR Design System — punto de entrada público.
  * Importá desde aquí: `import { ThemeSwitcher, colorVar } from '@velar/ui'`.
  */
-export * from './tokens';
-export { cn } from './cn';
-export { ThemeProvider, ThemeSwitcher, useTheme, themeInitScript } from './theme';
-export type { ThemeProviderProps } from './theme';
+export * from './tokens.js';
+export { cn } from './cn.js';
+export { ThemeProvider, ThemeSwitcher, useTheme, themeInitScript } from './theme.js';
+export type { ThemeProviderProps } from './theme.js';
 
 // Primitivas
-export { Button, IconButton } from './Button';
-export type { ButtonProps, IconButtonProps } from './Button';
-export { Card, CardHeader, CardTitle, CardFooter } from './Card';
-export type { CardProps } from './Card';
-export { Badge, Tag } from './Badge';
-export type { BadgeProps } from './Badge';
-export { Spinner, Skeleton, Alert, EmptyState } from './feedback';
-export type { AlertProps, EmptyStateProps } from './feedback';
+export { Button, IconButton } from './Button.js';
+export type { ButtonProps, IconButtonProps } from './Button.js';
+export { Card, CardHeader, CardTitle, CardFooter } from './Card.js';
+export type { CardProps } from './Card.js';
+export { Badge, Tag } from './Badge.js';
+export type { BadgeProps } from './Badge.js';
+export { Spinner, Skeleton, Alert, EmptyState } from './feedback.js';
+export type { AlertProps, EmptyStateProps } from './feedback.js';
 
 // Formularios
-export { Field, Input, Textarea, Select, Checkbox, Radio, Switch } from './form';
-export type { InputProps, TextareaProps, SelectProps, CheckboxProps, SwitchProps } from './form';
+export { Field, Input, Textarea, Select, Checkbox, Radio, Switch } from './form.js';
+export type { InputProps, TextareaProps, SelectProps, CheckboxProps, SwitchProps } from './form.js';
 
 // Layout
-export { Stack, Cluster, Grid } from './layout';
-export type { StackProps, ClusterProps, GridProps } from './layout';
+export { Stack, Cluster, Grid } from './layout.js';
+export type { StackProps, ClusterProps, GridProps } from './layout.js';
 
 // Overlays / navegación
-export { Tabs } from './Tabs';
-export type { TabItem } from './Tabs';
-export { Tooltip } from './Tooltip';
-export { Modal } from './Modal';
-export type { ModalProps } from './Modal';
+export { Tabs } from './Tabs.js';
+export type { TabItem } from './Tabs.js';
+export { Tooltip } from './Tooltip.js';
+export { Modal } from './Modal.js';
+export type { ModalProps } from './Modal.js';

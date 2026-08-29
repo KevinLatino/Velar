@@ -27,6 +27,7 @@
     "ogl": "^1.0.11",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "recharts": "^3.10.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -46,7 +47,12 @@
     "testEnvironment": "node",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.ts$": ["ts-jest", { "tsconfig": "tsconfig.test.json" }]
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "tsconfig": "tsconfig.test.json"
+        }
+      ]
     },
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/$1"
