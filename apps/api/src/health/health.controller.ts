@@ -9,6 +9,13 @@ import { HealthService } from './health.service';
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
+  /** Liveness: el proceso responde. Sin dependencias externas. */
+  @Get('live')
+  live() {
+    return this.healthService.liveness();
+  }
+
+  /** Readiness: Supabase, Horizon, Soroban RPC y fondeo de wallets. */
   @Get()
   async check() {
     return this.healthService.check();
