@@ -1,7 +1,17 @@
 import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { SupabaseService } from '../common/supabase/supabase.service';
 import { WalletService } from '../escrow/wallet.service';
-import { Role } from '@velar/types';
+import { AuditService } from '../audit/audit.service';
+import { AuditEventType, Role } from '@velar/types';
+
+/**
+ * Desactivar = banear en Supabase Auth por un plazo efectivamente infinito
+ * (100 años). Se usa el primitivo de Auth en vez de una columna nueva porque
+ * bloquea el login en el propio emisor del token: sin esto habría que acordarse
+ * de chequear la bandera en cada camino de autenticación.
+ */
+const DEACTIVATED_BAN_DURATION = '876000h';
+const ACTIVE_BAN_DURATION = 'none';
 
 type ProfileRow = {
   id: string;
@@ -14,6 +24,7 @@ export class UsersService {
   constructor(
     private supabase: SupabaseService,
     private wallets: WalletService,
+    private audit: AuditService,
   ) {}
 
   async getProfile(userId: string) {
@@ -115,5 +126,48 @@ export class UsersService {
       .from('profiles').update({ role }).eq('id', targetId).select().single();
     if (error) throw new BadRequestException(error.message);
     return data;
+  }
+
+  /* ─── Ciclo de vida de la cuenta (issue #77) ─────────────────────────────── */
+
+  /** Desactiva una cuenta: bloquea el login hasta que un admin la reactive. */
+  async deactivate(targetId: string, actorRole: Role, actorId: string) {
+    return this.setAccountActive(targetId, false, actorRole, actorId);
+  }
+
+  /** Reactiva una cuenta previamente desactivada. */
+  async reactivate(targetId: string, actorRole: Role, actorId: string) {
+    return this.setAccountActive(targetId, true, actorRole, actorId);
+  }
+
+  /**
+   * Mismo criterio de autorización que `setRole`: solo `admin`. Se auditan las
+   * dos direcciones, con el admin como actor y la cuenta afectada en el payload.
+   */
+  private async setAccountActive(
+    targetId: string,
+    active: boolean,
+    actorRole: Role,
+    actorId: string,
+  ) {
+    if (actorRole !== 'admin') throw new ForbiddenException('Admin only');
+    if (targetId === actorId) {
+      throw new BadRequestException('No podés desactivar tu propia cuenta');
+    }
+
+    const { error } = await this.supabase.admin.auth.admin.updateUserById(targetId, {
+      ban_duration: active ? ACTIVE_BAN_DURATION : DEACTIVATED_BAN_DURATION,
+    });
+    if (error) throw new BadRequestException(error.message);
+
+    await this.audit.emit({
+      type: active
+        ? AuditEventType.AUTH_ACCOUNT_REACTIVATED
+        : AuditEventType.AUTH_ACCOUNT_DEACTIVATED,
+      actorId,
+      payload: { targetUserId: targetId },
+    });
+
+    return { ok: true as const, userId: targetId, active };
   }
 }

@@ -1,6 +1,9 @@
-import { Injectable, BadRequestException, Logger, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, BadRequestException, Logger, UnauthorizedException, forwardRef } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../common/supabase/supabase.service';
 import { WalletService } from '../escrow/wallet.service';
+import { AuditService } from '../audit/audit.service';
+import { AuditEventType } from '@velar/types';
 import type { LoginRequest, RegisterRequest } from '@velar/types';
 
 export type Perspectiva = RegisterRequest['perspectiva'];
@@ -23,6 +26,8 @@ export class AuthService {
   constructor(
     private supabase: SupabaseService,
     private wallets: WalletService,
+    @Inject(forwardRef(() => AuditService)) private audit: AuditService,
+    private cfg: ConfigService,
   ) {}
 
   async login(input: LoginInput) {
@@ -163,6 +168,98 @@ export class AuthService {
       await db.auth.admin.deleteUser(userId).catch(() => undefined);
       throw e;
     }
+  }
+
+  /* ─── Ciclo de vida de la cuenta (issue #77) ─────────────────────────────── */
+
+  /**
+   * Dispara el correo de recuperación de Supabase.
+   *
+   * SIEMPRE responde `{ ok: true }`, exista la cuenta o no, y nunca propaga el
+   * error de Supabase: si la respuesta (o el tiempo, o el código) dependiera de
+   * si el email está registrado, el endpoint se volvería un oráculo para
+   * enumerar cuentas. Por eso el fallo solo se loguea.
+   */
+  async forgotPassword(email: string) {
+    if (!email) throw new BadRequestException('email es obligatorio');
+
+    try {
+      const redirectTo = this.cfg.get<string>('AUTH_PASSWORD_RESET_REDIRECT_URL');
+      await this.supabase.admin.auth.resetPasswordForEmail(
+        email,
+        redirectTo ? { redirectTo } : undefined,
+      );
+    } catch (e) {
+      // Deliberadamente silencioso hacia el cliente (ver doc de arriba).
+      this.logger.warn(`forgotPassword falló para ${email}: ${(e as Error).message}`);
+    }
+
+    // Se audita el intento aunque la cuenta no exista: sirve para detectar abuso.
+    // No se registra si el email existía, porque eso es justo lo que no se filtra.
+    await this.audit.emit({
+      type: AuditEventType.AUTH_PASSWORD_RESET_REQUESTED,
+      payload: { email },
+    });
+
+    return { ok: true as const };
+  }
+
+  /**
+   * Completa la recuperación: canjea el `token_hash` del enlace por el usuario y
+   * le fija la contraseña nueva con el service role.
+   */
+  async resetPassword(tokenHash: string, password: string) {
+    if (!tokenHash || !password) {
+      throw new BadRequestException('tokenHash y password son obligatorios');
+    }
+
+    const { data, error } = await this.supabase.admin.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: 'recovery',
+    });
+    if (error || !data?.user) {
+      throw new BadRequestException('El enlace de recuperación es inválido o venció');
+    }
+
+    const { error: updateError } = await this.supabase.admin.auth.admin.updateUserById(
+      data.user.id,
+      { password },
+    );
+    if (updateError) throw new BadRequestException(updateError.message);
+
+    await this.audit.emit({
+      type: AuditEventType.AUTH_PASSWORD_RESET_COMPLETED,
+      actorId: data.user.id,
+    });
+
+    return { ok: true as const };
+  }
+
+  /**
+   * Arranca el cambio de email. No lo aplica: genera el enlace de confirmación
+   * de Supabase, así que la dirección nueva solo queda activa cuando su dueño
+   * confirma. Evita que un token robado mueva la cuenta a otro correo.
+   */
+  async changeEmail(userId: string, currentEmail: string, newEmail: string) {
+    if (!newEmail) throw new BadRequestException('email es obligatorio');
+    if (newEmail === currentEmail) {
+      throw new BadRequestException('El email nuevo es igual al actual');
+    }
+
+    const { error } = await this.supabase.admin.auth.admin.generateLink({
+      type: 'email_change_new',
+      email: currentEmail,
+      newEmail,
+    });
+    if (error) throw new BadRequestException(error.message);
+
+    await this.audit.emit({
+      type: AuditEventType.AUTH_EMAIL_CHANGE_REQUESTED,
+      actorId: userId,
+      payload: { from: currentEmail, to: newEmail },
+    });
+
+    return { ok: true as const };
   }
 
   private fullName(i: RegisterInput): string {

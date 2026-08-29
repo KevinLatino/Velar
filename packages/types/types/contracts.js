@@ -26,6 +26,9 @@ const transferMutationResponseSchema = zod_1.z.union([transfers_1.transferRowSch
 exports.apiContracts = {
     'auth.register': endpoint({ method: 'POST', path: '/auth/register', module: 'auth', auth: false, body: auth_1.registerRequestSchema, params: noParams, query: noQuery, response: auth_1.registerResponseSchema }),
     'auth.login': endpoint({ method: 'POST', path: '/auth/login', module: 'auth', auth: false, body: auth_1.loginRequestSchema, params: noParams, query: noQuery, response: auth_1.loginResponseSchema }),
+    'auth.forgotPassword': endpoint({ method: 'POST', path: '/auth/forgot-password', module: 'auth', auth: false, body: auth_1.forgotPasswordRequestSchema, params: noParams, query: noQuery, response: auth_1.forgotPasswordResponseSchema }),
+    'auth.resetPassword': endpoint({ method: 'POST', path: '/auth/reset-password', module: 'auth', auth: false, body: auth_1.resetPasswordRequestSchema, params: noParams, query: noQuery, response: auth_1.forgotPasswordResponseSchema }),
+    'auth.changeEmail': endpoint({ method: 'POST', path: '/auth/change-email', module: 'auth', auth: true, body: auth_1.changeEmailRequestSchema, params: noParams, query: noQuery, response: auth_1.forgotPasswordResponseSchema }),
     'bonds.list': endpoint({ method: 'GET', path: '/bonds', module: 'bonds', auth: true, body: noBody, params: noParams, query: bonds_1.bondsQuerySchema, response: (0, common_1.paginatedSchema)(bonds_1.bondRowSchema) }),
     'bonds.requests.list': endpoint({ method: 'GET', path: '/bonds/requests', module: 'bonds', auth: true, body: noBody, params: noParams, query: noQuery, response: zod_1.z.array(bonds_1.bondRequestRowSchema) }),
     'bonds.requests.create': endpoint({ method: 'POST', path: '/bonds/requests', module: 'bonds', auth: true, body: bonds_1.createBondRequestRequestSchema, params: noParams, query: noQuery, response: bonds_1.bondRequestRowSchema }),
@@ -87,6 +90,8 @@ exports.apiContracts = {
     'users.list': endpoint({ method: 'GET', path: '/users', module: 'users', auth: true, body: noBody, params: noParams, query: noQuery, response: zod_1.z.array(users_1.profileRowSchema) }),
     'users.recipients': endpoint({ method: 'GET', path: '/users/recompradores', module: 'users', auth: true, body: noBody, params: noParams, query: noQuery, response: zod_1.z.array(users_1.recipientRowSchema) }),
     'users.setRole': endpoint({ method: 'PATCH', path: '/users/:id/role', module: 'users', auth: true, body: users_1.setRoleRequestSchema, params: common_1.paramsIdSchema, query: noQuery, response: users_1.profileRowSchema }),
+    'users.deactivate': endpoint({ method: 'PATCH', path: '/users/:id/deactivate', module: 'users', auth: true, body: noBody, params: common_1.paramsIdSchema, query: noQuery, response: auth_1.accountStatusResponseSchema }),
+    'users.reactivate': endpoint({ method: 'PATCH', path: '/users/:id/reactivate', module: 'users', auth: true, body: noBody, params: common_1.paramsIdSchema, query: noQuery, response: auth_1.accountStatusResponseSchema }),
 };
 function normalizedPath(value) {
     const path = value.split('?')[0].replace(/^https?:\/\/[^/]+/i, '').replace(/^\/api(?=\/|$)/, '');
