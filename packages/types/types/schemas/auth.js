@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loginResponseSchema = exports.registerResponseSchema = exports.registerRequestSchema = exports.loginRequestSchema = exports.perspectiveSchema = void 0;
+exports.accountStatusResponseSchema = exports.forgotPasswordResponseSchema = exports.changeEmailRequestSchema = exports.resetPasswordRequestSchema = exports.forgotPasswordRequestSchema = exports.loginResponseSchema = exports.registerResponseSchema = exports.registerRequestSchema = exports.loginRequestSchema = exports.perspectiveSchema = void 0;
 const zod_1 = require("zod");
 const common_1 = require("./common");
 exports.perspectiveSchema = zod_1.z.enum(['usuario', 'partido'], { error: 'validation.enum' });
@@ -52,3 +52,28 @@ exports.loginResponseSchema = zod_1.z.object({
     token_type: common_1.requiredStringSchema,
     user: zod_1.z.unknown(),
 }).passthrough();
+/* ─── Ciclo de vida de la cuenta (issue #77) ───────────────────────────────── */
+exports.forgotPasswordRequestSchema = zod_1.z.object({
+    email: common_1.requiredStringSchema.email('validation.email'),
+}).strict();
+exports.resetPasswordRequestSchema = zod_1.z.object({
+    /** `token_hash` del enlace de recuperación que Supabase envía por correo. */
+    tokenHash: common_1.requiredStringSchema,
+    password: common_1.requiredStringSchema.min(8, 'validation.password'),
+}).strict();
+exports.changeEmailRequestSchema = zod_1.z.object({
+    email: common_1.requiredStringSchema.email('validation.email'),
+}).strict();
+/**
+ * Respuesta uniforme de `forgot-password`. Es intencionalmente opaca: se
+ * devuelve lo mismo exista o no la cuenta, para no filtrar qué correos están
+ * registrados (enumeración de usuarios).
+ */
+exports.forgotPasswordResponseSchema = zod_1.z.object({
+    ok: zod_1.z.literal(true),
+}).strict();
+exports.accountStatusResponseSchema = zod_1.z.object({
+    ok: zod_1.z.literal(true),
+    userId: common_1.requiredStringSchema,
+    active: zod_1.z.boolean(),
+}).strict();

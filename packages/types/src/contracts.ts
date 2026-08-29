@@ -1,5 +1,15 @@
 import { z, type ZodTypeAny } from 'zod';
-import { loginRequestSchema, loginResponseSchema, registerRequestSchema, registerResponseSchema } from './schemas/auth';
+import {
+  accountStatusResponseSchema,
+  changeEmailRequestSchema,
+  forgotPasswordRequestSchema,
+  forgotPasswordResponseSchema,
+  loginRequestSchema,
+  loginResponseSchema,
+  registerRequestSchema,
+  registerResponseSchema,
+  resetPasswordRequestSchema,
+} from './schemas/auth';
 import {
   availableBondsQuerySchema,
   bondRequestRowSchema,
@@ -101,6 +111,9 @@ const transferMutationResponseSchema = z.union([transferRowSchema, transactionRe
 export const apiContracts = {
   'auth.register': endpoint({ method: 'POST', path: '/auth/register', module: 'auth', auth: false, body: registerRequestSchema, params: noParams, query: noQuery, response: registerResponseSchema }),
   'auth.login': endpoint({ method: 'POST', path: '/auth/login', module: 'auth', auth: false, body: loginRequestSchema, params: noParams, query: noQuery, response: loginResponseSchema }),
+  'auth.forgotPassword': endpoint({ method: 'POST', path: '/auth/forgot-password', module: 'auth', auth: false, body: forgotPasswordRequestSchema, params: noParams, query: noQuery, response: forgotPasswordResponseSchema }),
+  'auth.resetPassword': endpoint({ method: 'POST', path: '/auth/reset-password', module: 'auth', auth: false, body: resetPasswordRequestSchema, params: noParams, query: noQuery, response: forgotPasswordResponseSchema }),
+  'auth.changeEmail': endpoint({ method: 'POST', path: '/auth/change-email', module: 'auth', auth: true, body: changeEmailRequestSchema, params: noParams, query: noQuery, response: forgotPasswordResponseSchema }),
 
   'bonds.list': endpoint({ method: 'GET', path: '/bonds', module: 'bonds', auth: true, body: noBody, params: noParams, query: bondsQuerySchema, response: paginatedSchema(bondRowSchema) }),
   'bonds.requests.list': endpoint({ method: 'GET', path: '/bonds/requests', module: 'bonds', auth: true, body: noBody, params: noParams, query: noQuery, response: z.array(bondRequestRowSchema) }),
@@ -168,6 +181,8 @@ export const apiContracts = {
   'users.list': endpoint({ method: 'GET', path: '/users', module: 'users', auth: true, body: noBody, params: noParams, query: noQuery, response: z.array(profileRowSchema) }),
   'users.recipients': endpoint({ method: 'GET', path: '/users/recompradores', module: 'users', auth: true, body: noBody, params: noParams, query: noQuery, response: z.array(recipientRowSchema) }),
   'users.setRole': endpoint({ method: 'PATCH', path: '/users/:id/role', module: 'users', auth: true, body: setRoleRequestSchema, params: paramsIdSchema, query: noQuery, response: profileRowSchema }),
+  'users.deactivate': endpoint({ method: 'PATCH', path: '/users/:id/deactivate', module: 'users', auth: true, body: noBody, params: paramsIdSchema, query: noQuery, response: accountStatusResponseSchema }),
+  'users.reactivate': endpoint({ method: 'PATCH', path: '/users/:id/reactivate', module: 'users', auth: true, body: noBody, params: paramsIdSchema, query: noQuery, response: accountStatusResponseSchema }),
 } as const;
 
 export type EndpointName = keyof typeof apiContracts;

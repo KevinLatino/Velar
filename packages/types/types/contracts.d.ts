@@ -63,6 +63,49 @@ export declare const apiContracts: {
             user: z.ZodUnknown;
         }, z.core.$loose>;
     };
+    readonly 'auth.forgotPassword': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodObject<{
+            email: z.ZodString;
+        }, z.core.$strict>;
+        params: z.ZodObject<{}, z.core.$strict>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            ok: z.ZodLiteral<true>;
+        }, z.core.$strict>;
+    };
+    readonly 'auth.resetPassword': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodObject<{
+            tokenHash: z.ZodString;
+            password: z.ZodString;
+        }, z.core.$strict>;
+        params: z.ZodObject<{}, z.core.$strict>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            ok: z.ZodLiteral<true>;
+        }, z.core.$strict>;
+    };
+    readonly 'auth.changeEmail': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodObject<{
+            email: z.ZodString;
+        }, z.core.$strict>;
+        params: z.ZodObject<{}, z.core.$strict>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            ok: z.ZodLiteral<true>;
+        }, z.core.$strict>;
+    };
     readonly 'bonds.list': {
         method: HttpMethod;
         path: string;
@@ -2184,6 +2227,38 @@ export declare const apiContracts: {
             created_at: z.ZodString;
             updated_at: z.ZodString;
         }, z.core.$loose>;
+    };
+    readonly 'users.deactivate': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodUndefined;
+        params: z.ZodObject<{
+            id: z.ZodString;
+        }, z.core.$strip>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            ok: z.ZodLiteral<true>;
+            userId: z.ZodString;
+            active: z.ZodBoolean;
+        }, z.core.$strict>;
+    };
+    readonly 'users.reactivate': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodUndefined;
+        params: z.ZodObject<{
+            id: z.ZodString;
+        }, z.core.$strip>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            ok: z.ZodLiteral<true>;
+            userId: z.ZodString;
+            active: z.ZodBoolean;
+        }, z.core.$strict>;
     };
 };
 export type EndpointName = keyof typeof apiContracts;

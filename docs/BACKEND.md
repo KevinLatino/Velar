@@ -604,3 +604,79 @@ npm run test --workspace apps/api -- --testPathPatterns contracts
 ```
 Funciones puras fixture-driven sin mocks (`domain/*.spec.ts`) + servicio con
 `SupabaseService`/`AuditService` mockeados (`contracts.service.spec.ts`).
+
+---
+
+## 12. Ciclo de vida de la cuenta (issue #77)
+
+`AuthService` solo tenía `login` y `register`: quien olvidaba la contraseña no podía
+recuperarla, no había forma de cambiar el email, y no existía manera de desactivar una
+cuenta comprometida. Esta capa cierra ese hueco **usando primitivos que Supabase Auth ya
+provee**, sin agregar tablas ni columnas.
+
+### Endpoints
+
+```
+POST  /api/auth/forgot-password   (público, 3/min)
+POST  /api/auth/reset-password    (público, 5/min)
+POST  /api/auth/change-email      (autenticado, 3/min)
+PATCH /api/users/:id/deactivate   (admin)
+PATCH /api/users/:id/reactivate   (admin)
+```
+
+Todos registrados en `apiContracts` (`@velar/types`) y cubiertos por
+`controller-contract-coverage.spec.ts`.
+
+### Decisiones que conviene conocer antes de tocar esto
+
+**`forgot-password` responde siempre `{ ok: true }`.** Exista la cuenta o no, y aunque
+Supabase falle. Si la respuesta, el código o el mensaje dependieran de si el email está
+registrado, el endpoint se convertiría en un oráculo para enumerar cuentas. El error solo
+se loguea. **No "arregles" esto devolviendo 404 cuando el usuario no existe.**
+
+**El intento se audita igual, exista o no la cuenta.** Sirve para detectar abuso. Lo que
+NO se registra es si el email existía, porque es justo el dato que no se filtra.
+
+**Desactivar = banear en Supabase Auth** (`ban_duration: '876000h'`, ~100 años; `'none'`
+para reactivar). Se usa el primitivo de Auth en vez de una columna `active` porque el
+bloqueo ocurre en el emisor del token: con una bandera propia habría que acordarse de
+chequearla en cada camino de autenticación, y el día que se olvide, la cuenta desactivada
+vuelve a entrar. Por eso tampoco hace falta migración.
+
+**`change-email` no aplica el cambio**: genera el enlace de confirmación de Supabase
+(`generateLink`, tipo `email_change_new`), así que la dirección nueva solo queda activa
+cuando su dueño confirma. Un token robado no alcanza para mudar la cuenta a otro correo.
+
+**Un admin no puede desactivarse a sí mismo** — evita que el último admin se deje afuera.
+
+### Eventos de auditoría
+
+Todos vía `AuditService.emit()`, con los tipos nuevos en `@velar/types`:
+
+| Evento | `actorId` | Payload |
+|---|---|---|
+| `auth_password_reset_requested` | `null` (anónimo) | `{ email }` |
+| `auth_password_reset_completed` | dueño de la cuenta | — |
+| `auth_email_change_requested` | dueño de la cuenta | `{ from, to }` |
+| `auth_account_deactivated` | **el admin** | `{ targetUserId }` |
+| `auth_account_reactivated` | **el admin** | `{ targetUserId }` |
+
+### Rate limiting
+
+`@nestjs/throttler` ya estaba en el proyecto y `login` ya llevaba `@Throttle` (10/min): se
+extendió el mismo patrón en vez de introducir otro. `register` quedó en 5/min y
+`forgot-password` en 3/min — más bajo porque es anónimo y provoca envío de correo, así que
+sirve tanto para enumerar cuentas como para spamear una bandeja ajena.
+
+### Configuración opcional
+
+`AUTH_PASSWORD_RESET_REDIRECT_URL` — a dónde vuelve el usuario desde el enlace de
+recuperación. Si no está, se usa el default de Supabase.
+
+### Comprobación local sin credenciales
+```bash
+npm run test --workspace apps/api -- --testPathPatterns lifecycle
+```
+`SupabaseService` y `AuditService` mockeados en `auth/auth-lifecycle.service.spec.ts` y
+`users/users-lifecycle.service.spec.ts`. Sin base de datos, sin `service_role`, sin correo
+real.

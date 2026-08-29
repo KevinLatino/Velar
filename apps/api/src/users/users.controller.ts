@@ -39,4 +39,16 @@ export class UsersController {
   setRole(@Param('id') id: string, @Body() body: { role: Role }, @CurrentUser() user: any) {
     return this.users.setRole(id, body.role, user.profile?.role as Role);
   }
+
+  /** Desactiva una cuenta (admin). Bloquea el login hasta reactivarla. */
+  @Patch(':id/deactivate')
+  deactivate(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.users.deactivate(id, user.profile?.role as Role, user.id);
+  }
+
+  /** Reactiva una cuenta desactivada (admin). */
+  @Patch(':id/reactivate')
+  reactivate(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.users.reactivate(id, user.profile?.role as Role, user.id);
+  }
 }

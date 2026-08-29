@@ -34,6 +34,11 @@ export declare const AuditEventType: {
     readonly REPORT_SLA_ESCALATED: "report_sla_escalated";
     readonly REPORT_EXPORTED: "report_exported";
     readonly REPORT_MARKED_REVIEWED: "report_marked_reviewed";
+    readonly AUTH_PASSWORD_RESET_REQUESTED: "auth_password_reset_requested";
+    readonly AUTH_PASSWORD_RESET_COMPLETED: "auth_password_reset_completed";
+    readonly AUTH_EMAIL_CHANGE_REQUESTED: "auth_email_change_requested";
+    readonly AUTH_ACCOUNT_DEACTIVATED: "auth_account_deactivated";
+    readonly AUTH_ACCOUNT_REACTIVATED: "auth_account_reactivated";
 };
 export type AuditEventType = (typeof AuditEventType)[keyof typeof AuditEventType];
 export interface AuditEvent {

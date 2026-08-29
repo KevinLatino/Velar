@@ -37,4 +37,11 @@ exports.AuditEventType = {
     REPORT_SLA_ESCALATED: 'report_sla_escalated',
     REPORT_EXPORTED: 'report_exported',
     REPORT_MARKED_REVIEWED: 'report_marked_reviewed',
+    // Ciclo de vida de la cuenta (issue #77). `actorId` es el dueño de la cuenta,
+    // salvo en (des)activación, donde es el admin que ejecuta la acción.
+    AUTH_PASSWORD_RESET_REQUESTED: 'auth_password_reset_requested',
+    AUTH_PASSWORD_RESET_COMPLETED: 'auth_password_reset_completed',
+    AUTH_EMAIL_CHANGE_REQUESTED: 'auth_email_change_requested',
+    AUTH_ACCOUNT_DEACTIVATED: 'auth_account_deactivated',
+    AUTH_ACCOUNT_REACTIVATED: 'auth_account_reactivated',
 };

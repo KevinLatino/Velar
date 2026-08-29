@@ -3,9 +3,10 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { AuthModule } from '../auth/auth.module';
 import { EscrowModule } from '../escrow/escrow.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
-  imports: [AuthModule, EscrowModule],
+  imports: [AuthModule, EscrowModule, AuditModule],
   providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService],
