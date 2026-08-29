@@ -1,11 +1,25 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, ExternalLink, ShieldCheck, Coins, Server, Lock, Activity, Eye, BookOpen, Boxes,
+  Search, X,
 } from 'lucide-react';
+import { publicApiFetch } from '../../lib/api';
+import { PaginationControls } from '../../components/PaginationControls';
+import { StatusBadge } from '../../components/status-ui';
+import type { PaginatedResponse } from '@velar/types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+type BondSummary = {
+  bond_id: string;
+  party?: string | null;
+  face_value: number;
+  currency: string;
+  status: string;
+  asset_url: string;
+  soroban_contract_url: string | null;
+  soroban_contract_id: string | null;
+};
 
 type Snapshot = {
   network: string;
@@ -22,35 +36,58 @@ type Snapshot = {
     sorobanContracts: number;
     trustlessWorkContracts: number;
   };
-  recent_bonds: Array<{
-    bond_id: string;
-    party?: string;
-    face_value: number;
-    currency: string;
-    status: string;
-    asset_url: string;
-    soroban_contract_url: string | null;
-    soroban_contract_id: string | null;
-  }>;
-  soroban_nfts: Array<{ bond_id: string; contract_id: string; url: string }>;
-  trustless_work_contracts: Array<{ transfer_id: string; bond_id?: string; status: string; contract_id: string; url: string }>;
+  recent_bonds: PaginatedResponse<BondSummary>;
+  soroban_nfts: PaginatedResponse<{ bond_id: string; contract_id: string; url: string }>;
+  trustless_work_contracts: PaginatedResponse<{ transfer_id: string; bond_id?: string; status: string; contract_id: string; url: string }>;
   memo_glossary: Array<{ prefix: string; meaning: string }>;
 };
+
+type SearchResponse = { query: string; count: number; results: BondSummary[] };
 
 const fmtCRC = (n: number) => new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(n || 0);
 const fmtNum = (n: number) => new Intl.NumberFormat('es-CR').format(n || 0);
 const shortKey = (k: string, n = 8) => k.length > 2 * n + 3 ? `${k.slice(0, n)}…${k.slice(-n)}` : k;
+const PAGE_LIMIT = 20;
 
 export default function ExplorerPage() {
   const [data, setData] = useState<Snapshot | null>(null);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+
+  const [query, setQuery] = useState('');
+  const [searchResult, setSearchResult] = useState<SearchResponse | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
 
   useEffect(() => {
-    fetch(`${API_URL}/explorer/snapshot`)
-      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-      .then(setData)
-      .catch((e) => setError(e.message));
-  }, []);
+    setError('');
+    publicApiFetch('GET', `/explorer/snapshot?page=${page}&limit=${PAGE_LIMIT}`)
+      .then((res) => setData(res as Snapshot))
+      .catch((e: Error) => setError(e.message));
+  }, [page]);
+
+  async function runSearch(e: FormEvent) {
+    e.preventDefault();
+    const q = query.trim();
+    if (!q) return;
+    setSearching(true);
+    setSearchError('');
+    try {
+      const res = await publicApiFetch('GET', `/explorer/search?q=${encodeURIComponent(q)}`);
+      setSearchResult(res as SearchResponse);
+    } catch (e: any) {
+      setSearchError(e.message ?? 'No se pudo buscar');
+      setSearchResult(null);
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function clearSearch() {
+    setQuery('');
+    setSearchResult(null);
+    setSearchError('');
+  }
 
   if (error) {
     return (
@@ -104,7 +141,7 @@ export default function ExplorerPage() {
       <div className="mx-auto max-w-[1280px] px-6 py-12 pb-24">
 
         {/* Hero */}
-        <section className="mb-12 text-center">
+        <section className="mb-10 text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
             Red Stellar · {data.network}
@@ -118,6 +155,77 @@ export default function ExplorerPage() {
             Cada enlace abre directamente la fuente de verdad en Stellar Expert.
             No necesitás cuenta ni confiar en VELAR para verificar.
           </p>
+        </section>
+
+        {/* Búsqueda */}
+        <section className="mb-12">
+          <form onSubmit={runSearch} className="mx-auto flex max-w-xl items-center gap-2">
+            <div className="relative flex-1">
+              <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar por ID de bono, partido o wallet Stellar…"
+                className="h-11 w-full rounded-full border border-slate-200 bg-white pl-10 pr-9 text-sm text-slate-800 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  aria-label="Limpiar búsqueda"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={searching || !query.trim()}
+              className="inline-flex h-11 items-center gap-1.5 rounded-full bg-primary px-5 text-[13px] font-semibold text-white transition hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {searching ? 'Buscando…' : 'Buscar'}
+            </button>
+          </form>
+
+          {searchError && (
+            <p className="mx-auto mt-3 max-w-xl text-center text-sm text-red-600">{searchError}</p>
+          )}
+
+          {searchResult && (
+            <div className="mx-auto mt-6 max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-3">
+                <p className="text-[13px] font-semibold text-slate-700">
+                  {searchResult.count === 0
+                    ? `Sin resultados para "${searchResult.query}"`
+                    : `${searchResult.count} resultado${searchResult.count === 1 ? '' : 's'} para "${searchResult.query}"`}
+                </p>
+                <button onClick={clearSearch} className="text-[12px] font-medium text-slate-500 transition hover:text-slate-800">
+                  Limpiar
+                </button>
+              </div>
+              {searchResult.results.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 px-5 py-10 text-center">
+                  <Eye size={22} className="text-slate-300" />
+                  <p className="text-sm text-slate-500">No encontramos ningún bono, partido o wallet que coincida.</p>
+                </div>
+              ) : (
+                searchResult.results.map((b) => (
+                  <Link
+                    key={b.bond_id}
+                    href={`/explorer/${encodeURIComponent(b.bond_id)}`}
+                    className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-3.5 transition last:border-0 hover:bg-slate-50"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-mono text-sm font-bold text-primary" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{b.bond_id}</p>
+                      <p className="truncate text-[12.5px] text-slate-500">{b.party ?? 'Sin partido'} · {fmtCRC(b.face_value)}</p>
+                    </div>
+                    <StatusBadge status={b.status} />
+                  </Link>
+                ))
+              )}
+            </div>
+          )}
         </section>
 
         {/* Stats */}
@@ -206,61 +314,67 @@ export default function ExplorerPage() {
         </section>
 
         {/* Soroban NFTs */}
-        {data.soroban_nfts.length > 0 && (
+        {data.soroban_nfts.data.length > 0 && (
           <section className="mb-12">
             <h2 className="mb-1 flex items-center gap-2 text-xl font-semibold text-slate-900" style={{ fontFamily: 'Geist, sans-serif' }}>
-              Soroban NFTs <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[12px] font-semibold text-purple-700">{data.soroban_nfts.length}</span>
+              Soroban NFTs <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[12px] font-semibold text-purple-700">{data.soroban_nfts.total}</span>
             </h2>
             <p className="mb-6 text-sm text-slate-500">Cada bono nuevo es un contrato Soroban con toda su metadata on-chain.</p>
 
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
-              {data.soroban_nfts.map((n) => (
-                <a key={n.contract_id} href={n.url} target="_blank" rel="noopener noreferrer"
+              {data.soroban_nfts.data.map((n) => (
+                <Link key={n.contract_id} href={`/explorer/${encodeURIComponent(n.bond_id)}`}
                   className="group flex items-center justify-between gap-3 rounded-xl border border-purple-100 bg-purple-50/40 px-4 py-3 transition hover:bg-purple-50">
                   <div className="min-w-0">
                     <p className="font-mono text-sm font-bold text-purple-900" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{n.bond_id}</p>
                     <p className="truncate font-mono text-[11px] text-purple-700">{shortKey(n.contract_id, 6)}</p>
                   </div>
                   <ExternalLink size={14} className="shrink-0 text-purple-600 transition group-hover:scale-110" />
-                </a>
+                </Link>
               ))}
             </div>
           </section>
         )}
 
         {/* Trustless Work contracts */}
-        {data.trustless_work_contracts.length > 0 && (
+        {data.trustless_work_contracts.data.length > 0 && (
           <section className="mb-12">
             <h2 className="mb-1 flex items-center gap-2 text-xl font-semibold text-slate-900" style={{ fontFamily: 'Geist, sans-serif' }}>
               <ShieldCheck size={18} className="text-emerald-700" />
-              Contratos Trustless Work <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-semibold text-emerald-700">{data.trustless_work_contracts.length}</span>
+              Contratos Trustless Work <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-semibold text-emerald-700">{data.trustless_work_contracts.total}</span>
             </h2>
             <p className="mb-6 text-sm text-slate-500">Cada venta crea un contrato Soroban Single-Release como registro inmutable del trade.</p>
 
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              {data.trustless_work_contracts.map((c) => (
-                <a key={c.contract_id} href={c.url} target="_blank" rel="noopener noreferrer"
+              {data.trustless_work_contracts.data.map((c) => (
+                <div key={c.contract_id}
                   className="group flex items-center justify-between border-b border-slate-100 px-5 py-3 transition last:border-0 hover:bg-emerald-50/40">
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-sm font-bold text-emerald-700" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{c.bond_id ?? 'Bono'}</span>
+                    {c.bond_id ? (
+                      <Link href={`/explorer/${encodeURIComponent(c.bond_id)}`} className="font-mono text-sm font-bold text-emerald-700 hover:underline" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                        {c.bond_id}
+                      </Link>
+                    ) : (
+                      <span className="font-mono text-sm font-bold text-emerald-700" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Bono</span>
+                    )}
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{c.status}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <a href={c.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
                     <span className="font-mono text-[11px] text-slate-500">{shortKey(c.contract_id, 6)}</span>
                     <ExternalLink size={13} className="text-emerald-600 transition group-hover:scale-110" />
-                  </div>
-                </a>
+                  </a>
+                </div>
               ))}
             </div>
           </section>
         )}
 
         {/* Bonos recientes */}
-        {data.recent_bonds.length > 0 && (
+        {data.recent_bonds.data.length > 0 && (
           <section className="mb-12">
             <h2 className="mb-1 flex items-center gap-2 text-xl font-semibold text-slate-900" style={{ fontFamily: 'Geist, sans-serif' }}>
               <Activity size={18} className="text-primary" />
-              Últimos bonos emitidos
+              Bonos emitidos
             </h2>
             <p className="mb-6 text-sm text-slate-500">Cada uno con su asset Stellar (clásico) y opcionalmente su contrato Soroban (NFT con metadata).</p>
 
@@ -272,12 +386,14 @@ export default function ExplorerPage() {
                 <span>Estado</span>
                 <span className="text-right">On-chain</span>
               </div>
-              {data.recent_bonds.map((b) => (
+              {data.recent_bonds.data.map((b) => (
                 <div key={b.bond_id} className="grid grid-cols-1 items-center gap-3 border-b border-slate-100 px-5 py-3 last:border-0 md:grid-cols-[140px_1fr_120px_120px_240px]">
-                  <span className="font-mono text-sm font-bold text-primary" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{b.bond_id}</span>
+                  <Link href={`/explorer/${encodeURIComponent(b.bond_id)}`} className="font-mono text-sm font-bold text-primary hover:underline" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                    {b.bond_id}
+                  </Link>
                   <span className="text-sm text-slate-700">{b.party ?? '—'}</span>
                   <span className="text-sm font-semibold text-slate-900">{fmtCRC(b.face_value)}</span>
-                  <span><span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{b.status}</span></span>
+                  <span><StatusBadge status={b.status} /></span>
                   <div className="flex items-center justify-end gap-2">
                     <a href={b.asset_url} target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] font-medium text-slate-700 transition hover:border-primary hover:text-primary">
@@ -292,6 +408,12 @@ export default function ExplorerPage() {
                   </div>
                 </div>
               ))}
+              <PaginationControls
+                page={data.recent_bonds.page}
+                limit={data.recent_bonds.limit}
+                total={data.recent_bonds.total}
+                onPageChange={setPage}
+              />
             </div>
           </section>
         )}
