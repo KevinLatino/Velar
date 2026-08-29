@@ -4,7 +4,7 @@
  * Accesibles: label asociada, aria-invalid, aria-describedby para errores/ayuda.
  */
 import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
-import { cn } from './cn';
+import { cn } from './cn.js';
 
 const CONTROL = 'w-full rounded-xl border border-outline-variant/40 bg-surface px-3.5 py-2.5 text-sm text-on-surface outline-none transition placeholder:text-on-surface-variant/60 focus:border-primary-container focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-primary-container)_12%,transparent)] disabled:cursor-not-allowed disabled:opacity-60';
 

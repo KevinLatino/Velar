@@ -4,7 +4,11 @@
  * ===================================================
  * `ThemeProvider` refleja dos ejes sobre el elemento <html>:
  *   - `data-theme="light|dark"`  → paleta clara u oscura (elección del usuario, se persiste).
- *   - `data-country="CR|CO|BR|AR"` → acento de marca por país (viene de `useCountry`).
+ *   - `data-country="CR|CO|BR|AR"` → acento de marca por país (lo pasa la app por prop).
+ *
+ * El país llega por prop y no desde un contexto de la app: el design system no
+ * conoce `lib/country`, así que el paquete es consumible por cualquier app del
+ * monorepo. Quien tenga el contexto de país se lo pasa (ver `AppProviders`).
  *
  * Los VALORES viven en `globals.css`; acá solo conmutamos los atributos. El
  * script anti-FOUC (`themeInitScript`) aplica el tema guardado antes del primer
@@ -19,8 +23,7 @@ import {
   type ReactNode,
 } from 'react';
 import { Moon, Sun } from 'lucide-react';
-import { useCountry } from '../../lib/country';
-import { THEMES, type Theme } from './tokens';
+import { THEMES, type Theme } from './tokens.js';
 
 const STORE_KEY = 'velar.theme';
 
@@ -43,9 +46,17 @@ function isTheme(v: unknown): v is Theme {
  */
 export const themeInitScript = `(function(){try{var t=localStorage.getItem('${STORE_KEY}');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export type ThemeProviderProps = {
+  children: ReactNode;
+  /**
+   * País activo, reflejado como `data-country` en <html> para el acento de
+   * marca. Si se omite, el atributo no se toca y solo aplica el tema.
+   */
+  country?: string;
+};
+
+export function ThemeProvider({ children, country }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>('light');
-  const { country } = useCountry();
 
   // Sincroniza el tema inicial con lo que el script anti-FOUC ya dejó en <html>.
   useEffect(() => {
@@ -74,6 +85,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   // Refleja el país activo como acento de marca.
   useEffect(() => {
+    if (!country) return;
     document.documentElement.setAttribute('data-country', country);
   }, [country]);
 

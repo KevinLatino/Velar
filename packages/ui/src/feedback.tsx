@@ -3,7 +3,7 @@
  */
 import type { HTMLAttributes, ReactNode } from 'react';
 import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
-import { cn } from './cn';
+import { cn } from './cn.js';
 
 export function Spinner({ size = 16, className, label = 'Cargando' }: { size?: number; className?: string; label?: string }) {
   return (

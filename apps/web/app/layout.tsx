@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AppProviders } from '../components/AppProviders';
-import { themeInitScript } from '../components/ui/theme';
+import { themeInitScript } from '@velar/ui';
 
 export const metadata: Metadata = {
   title: 'VELAR | Trazabilidad de Bonos',
