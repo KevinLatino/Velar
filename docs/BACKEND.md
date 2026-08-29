@@ -83,6 +83,9 @@ GET    /api/audit/...             (timeline/eventos)
 GET    /api/notifications                 (propias; { notifications, unreadCount })
 PATCH  /api/notifications/read-all
 PATCH  /api/notifications/:id/read
+
+GET    /api/health/live           (liveness, público, sin dependencias)
+GET    /api/health                (readiness, público; ver §7)
 ```
 
 ---
@@ -259,3 +262,95 @@ npm run test --workspace apps/api -- --runInBand
 
 Las pruebas `common/contracts/*.spec.ts` validan payloads válidos/inválidos por cada módulo,
 localización, drift de responses y que toda ruta JSON de los controladores cubiertos tenga contrato.
+
+---
+
+## 7. Health checks: liveness/readiness con detalle por dependencia (issue #80)
+
+`HealthModule` (`apps/api/src/health/`) expone dos endpoints públicos (`@Public()`, sin auth):
+
+```
+GET /api/health/live    liveness  : el proceso responde. Sin llamadas externas, siempre rápido.
+GET /api/health         readiness : chequea TODAS las dependencias reales, en paralelo.
+```
+
+Se mantuvo `GET /health` como el endpoint de readiness (compatibilidad con quien ya lo consuma)
+y se agregó `/health/live` como el endpoint liviano nuevo, en vez de mover ambos a `/health/ready`.
+
+### `GET /health/live`
+
+No hace ninguna llamada de red. Responde siempre rápido:
+
+```json
+{ "status": "ok", "uptime": 123, "version": "0.0.1", "commit": "unknown", "deployedAt": "2026-08-28T19:00:00.000Z" }
+```
+
+### `GET /health` (readiness)
+
+Chequea, todas en paralelo con `Promise.all` (una dependencia lenta no bloquea a las demás) y
+con el mismo timeout de 3s por dependencia que ya existía:
+
+- **Supabase** (`up`/`down`) : sin cambios, igual que antes.
+- **Stellar Horizon** (`up`/`down`, campo `stellar`) : sin cambios, igual que antes.
+- **Soroban RPC** (`up`/`down`, campo `soroban`, **nuevo**) : llama `getHealth` sobre
+  `SOROBAN_RPC_URL` (`apps/api/src/escrow/stellar.config.ts`). Antes un Horizon sano podía
+  esconder un RPC de contratos caído; ahora se reporta aparte.
+- **Wallets de plataforma y escrow** (campo `wallets.platform` / `wallets.escrow`, **nuevo**) :
+  lee el balance nativo (XLM) de cada cuenta vía Horizon.
+  - `ok` : balance ≥ `ESCROW_MIN_XLM_BALANCE` (default 5 XLM).
+  - `degraded` : balance por debajo del umbral — riesgo real de incidente (no puede pagar fees /
+    reservas), pero el servicio sigue funcionando, así que NO tira 503.
+  - `down` : la cuenta configurada es inalcanzable (Horizon no responde o la cuenta no existe).
+  - `unconfigured` : no hay `WalletService.platformAddress`/`escrowAddress` (dev/test sin
+    credenciales VELAR). No es un incidente, así que no afecta el status agregado.
+
+Respuesta cuando todo está sano:
+
+```json
+{
+  "status": "ok",
+  "supabase": "up",
+  "stellar": "up",
+  "soroban": "up",
+  "wallets": {
+    "platform": { "status": "ok", "label": "platform", "address": "G...", "balanceXlm": 42.5, "minBalanceXlm": 5 },
+    "escrow":   { "status": "ok", "label": "escrow",   "address": "G...", "balanceXlm": 30.1, "minBalanceXlm": 5 }
+  },
+  "uptime": 4213,
+  "version": "0.0.1",
+  "commit": "unknown",
+  "deployedAt": "2026-08-28T19:00:00.000Z"
+}
+```
+
+**Status agregado y código HTTP:**
+
+- `status: "ok"` → HTTP 200.
+- `status: "degraded"` → HTTP 200 (algo pide atención — ej. wallet con balance bajo — pero
+  ninguna dependencia crítica está caída).
+- `status: "down"` → HTTP 503 (`HttpException`, igual que antes). Se dispara si Supabase, Horizon,
+  Soroban RPC, o una wallet **configurada** están caídos. `unconfigured` nunca dispara `down`.
+
+**Build/version info:** `version` sale de `npm_package_version` (lo inyecta `npm` en runtime);
+`commit` de `GIT_COMMIT_SHA` / `VERCEL_GIT_COMMIT_SHA` / `RENDER_GIT_COMMIT` (el que exista según
+la plataforma de deploy) o `"unknown"` en local; `deployedAt` de `DEPLOYED_AT` si el deploy la
+define, si no cae al momento en que arrancó el proceso.
+
+**Variables de entorno nuevas (opcionales, con default sensato):**
+
+```bash
+ESCROW_MIN_XLM_BALANCE=5   # umbral de balance nativo bajo el cual una wallet se reporta 'degraded'
+GIT_COMMIT_SHA=            # opcional, para el payload de debugging
+DEPLOYED_AT=               # opcional, ISO timestamp del deploy
+```
+
+### Comprobación local sin credenciales
+
+`HealthService.spec.ts` mockea `SupabaseService` y `WalletService`, y usa `jest.spyOn(globalThis, 'fetch')`
+para simular Horizon/Soroban — no se necesita conexión real a testnet ni credenciales VELAR:
+
+```bash
+npm run build --workspace apps/api
+npm run lint --workspace apps/api
+npm run test --workspace apps/api -- health
+```
