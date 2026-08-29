@@ -41,6 +41,7 @@ export const AuditEventType = {
   AUTH_EMAIL_CHANGE_REQUESTED: 'auth_email_change_requested',
   AUTH_ACCOUNT_DEACTIVATED: 'auth_account_deactivated',
   AUTH_ACCOUNT_REACTIVATED: 'auth_account_reactivated',
+  WALLET_RETRY_REQUESTED: 'wallet_retry_requested',
 } as const;
 
 export type AuditEventType =

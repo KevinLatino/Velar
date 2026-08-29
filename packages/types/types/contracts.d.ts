@@ -2089,6 +2089,12 @@ export declare const apiContracts: {
             party_id: z.ZodNullable<z.ZodString>;
             stellar_wallet: z.ZodNullable<z.ZodString>;
             stellar_public_key: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_status: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_error: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_network: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_created_at: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_retry_count: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            stellar_wallet_last_retry_at: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             country: z.ZodOptional<z.ZodString>;
             created_at: z.ZodString;
             updated_at: z.ZodString;
@@ -2119,6 +2125,12 @@ export declare const apiContracts: {
             party_id: z.ZodNullable<z.ZodString>;
             stellar_wallet: z.ZodNullable<z.ZodString>;
             stellar_public_key: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_status: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_error: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_network: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_created_at: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_retry_count: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            stellar_wallet_last_retry_at: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             country: z.ZodOptional<z.ZodString>;
             created_at: z.ZodString;
             updated_at: z.ZodString;
@@ -2162,6 +2174,12 @@ export declare const apiContracts: {
             party_id: z.ZodNullable<z.ZodString>;
             stellar_wallet: z.ZodNullable<z.ZodString>;
             stellar_public_key: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_status: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_error: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_network: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_created_at: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_retry_count: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            stellar_wallet_last_retry_at: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             country: z.ZodOptional<z.ZodString>;
             created_at: z.ZodString;
             updated_at: z.ZodString;
@@ -2223,6 +2241,12 @@ export declare const apiContracts: {
             party_id: z.ZodNullable<z.ZodString>;
             stellar_wallet: z.ZodNullable<z.ZodString>;
             stellar_public_key: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_status: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_error: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_network: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_created_at: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_retry_count: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            stellar_wallet_last_retry_at: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             country: z.ZodOptional<z.ZodString>;
             created_at: z.ZodString;
             updated_at: z.ZodString;
@@ -2259,6 +2283,26 @@ export declare const apiContracts: {
             userId: z.ZodString;
             active: z.ZodBoolean;
         }, z.core.$strict>;
+    };
+    readonly 'users.retryWallet': {
+        method: HttpMethod;
+        path: string;
+        module: "auth" | "bonds" | "transfers" | "reports" | "escrow" | "notifications" | "users" | "contracts";
+        auth: boolean;
+        body: z.ZodObject<{}, z.core.$strict>;
+        params: z.ZodObject<{
+            id: z.ZodString;
+        }, z.core.$strip>;
+        query: z.ZodObject<{}, z.core.$strict>;
+        response: z.ZodObject<{
+            ok: z.ZodLiteral<true>;
+            stellar_wallet: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_status: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_error: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_network: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            stellar_wallet_retry_count: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            stellar_wallet_last_retry_at: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        }, z.core.$loose>;
     };
 };
 export type EndpointName = keyof typeof apiContracts;

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { WalletReconciliationService } from './wallet-reconciliation.service';
 import { SupabaseService } from '../common/supabase/supabase.service';
 import { WalletService } from '../escrow/wallet.service';
 import { AuditService } from '../audit/audit.service';
@@ -27,6 +28,7 @@ describe('UsersService — desactivación de cuentas', () => {
         },
         { provide: WalletService, useValue: { createWalletRecord: jest.fn() } },
         { provide: AuditService, useValue: audit },
+        { provide: WalletReconciliationService, useValue: { retryProfile: jest.fn() } },
       ],
     }).compile();
 

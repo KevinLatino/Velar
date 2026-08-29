@@ -55,8 +55,11 @@ Migración de notificaciones (`supabase/migrations/20260608000000_notifications.
 ```
 GET    /api/users/me
 PATCH  /api/users/me
-GET    /api/users                 (admin/tse)
+GET    /api/users                 (admin/tse; incluye stellar_wallet_status + stellar_wallet_error)
 PATCH  /api/users/:id/role        (admin)
+POST   /api/users/:id/wallet/retry (admin; ver §14)
+PATCH  /api/users/:id/deactivate   (admin; ver §12)
+PATCH  /api/users/:id/reactivate   (admin; ver §12)
 
 GET    /api/parties
 GET    /api/parties/:id
@@ -774,4 +777,61 @@ para simular Horizon/Soroban — no se necesita conexión real a testnet ni cred
 npm run build --workspace apps/api
 npm run lint --workspace apps/api
 npm run test --workspace apps/api -- health
+```
+
+---
+
+## 14. Reconciliación de wallets de custodia (`failed` → retry)
+
+`AuthService.register` y `UsersService.ensureProfileWallet` llaman a `WalletService.createWalletRecord()`. Friendbot (testnet) puede fallar; **el registro no se aborta**: se persiste `stellar_wallet_status = 'failed'` y el mensaje en `stellar_wallet_error`. Un perfil o partido en `failed` no puede recibir tokens de bono hasta que haya una cuenta funded.
+
+Esto **no** cambia el interior de Friendbot ni de `createWalletRecord()`. La capa de resiliencia es `WalletReconciliationService`: vuelve a llamar al mismo método.
+
+### Por qué quedan wallets `failed` (y por qué GET no las sana)
+
+- **Register:** si `createWalletRecord()` tira o devuelve `status: 'failed'`, el profile (y el party, si aplica) se guarda igual, con status/error. El alta de cuenta no depende de Friendbot.
+- **`ensureProfileWallet`:** corre solo desde `getProfile` cuando `stellar_wallet` está vacío. Si Friendbot falla, `createWalletRecord()` **igual persiste un keypair** y el profile queda con `stellar_wallet` seteado y status `failed`.
+- **`getProfile` no reintenta** si `stellar_wallet` ya tiene valor. Un failed con clave pública **nunca** se auto-repara en `GET /api/users/me`. La reconciliación tiene que filtrar por **status**, no por “falta de clave”.
+
+### Cómo selecciona el job
+
+Consulta `profiles` y `parties` con `stellar_wallet_status = 'failed'`, índices parciales en `20260829000000_custodial_wallet_retry.sql`.
+
+Además exige `stellar_wallet_retry_count < 5` y que el backoff sobre `stellar_wallet_last_retry_at` ya haya vencido (si nunca se reintentó, entra). El lote está acotado (~10 filas) para caber en una invocación serverless de 60s y no martillar Friendbot.
+
+### Reintentos acotados
+
+Columnas (profiles y parties): `stellar_wallet_retry_count` (default 0), `stellar_wallet_last_retry_at`, más las existentes `stellar_wallet_status` / `stellar_wallet_error`.
+
+| Resultado | Persistencia |
+|---|---|
+| Éxito (`created` / `funded`) | Actualiza clave, status, limpia `stellar_wallet_error`, resetea `retry_count`. |
+| Falla | Incrementa `retry_count`, escribe `stellar_wallet_error`, setea `last_retry_at`. |
+
+Tope **5** intentos. Backoff exponencial a partir de `last_retry_at` (p. ej. 1m, 5m, 15m, 1h, 6h). Al llegar al máximo, el job **omite** la fila.
+
+Cada reintento llama `createWalletRecord(label)` otra vez. Ese método hace `Keypair.random()`: **es un keypair nuevo**, no un “fund” de la clave failed. Queda aceptado en este epic; no se agregó un fund-existing-key.
+
+### Por qué no hay `@nestjs/schedule`
+
+La API corre en **Vercel serverless** (`vercel.api.json`, `api/index.ts`, `maxDuration` 60s). Un cron de `@nestjs/schedule` no corre entre invocaciones en frío: no está en el stack y **no** hay que agregarlo.
+
+El lote `WalletReconciliationService.reconcileFailedWallets()` no está en un cron Nest. Hoy se dispara el reintento **por usuario** con `POST /api/users/:id/wallet/retry` (admin). El método de lote queda listo para un Vercel Cron / HTTP futuro; no es un proceso Nest de larga duración.
+
+### `POST /api/users/:id/wallet/retry` (solo admin)
+
+Reintento **manual de un usuario**. Misma barra que `setRole` / `deactivate`: `actorRole !== 'admin'` → `ForbiddenException`. **TSE no reintenta.** No es self-retry; no toca `PATCH /api/users/me/wallet` (Freighter).
+
+Si la operación no tira, `AuditService.emit()` con tipo `wallet_retry_requested` (`AuditEventType`; valor en `audit_event_type` vía `20260829000001_wallet_retry_audit_event.sql`). `actorId` = admin. Payload típico: `targetUserId`, status previo/nuevo, `publicKey` / `error` si aplica.
+
+### Superficie en `GET /api/users`
+
+`listUsers` (admin/tse) ya hace `select('*, parties(*)')`. Con las columnas de wallet en el schema, el directorio **ya trae** `stellar_wallet_status`, `stellar_wallet_error`, `retry_count` y `last_retry_at` — no hace falta un endpoint extra de “salud de wallet”.
+
+### Comprobación local sin credenciales
+
+Specs con `WalletService.createWalletRecord` y `SupabaseService` mockeados (mismo patrón que `users-lifecycle.service.spec.ts`). **Sin** Friendbot real, testnet ni credenciales VELAR.
+
+```bash
+npm run test --workspace apps/api -- --testPathPatterns wallet-reconciliation
 ```
