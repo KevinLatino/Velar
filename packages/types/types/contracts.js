@@ -92,6 +92,7 @@ exports.apiContracts = {
     'users.setRole': endpoint({ method: 'PATCH', path: '/users/:id/role', module: 'users', auth: true, body: users_1.setRoleRequestSchema, params: common_1.paramsIdSchema, query: noQuery, response: users_1.profileRowSchema }),
     'users.deactivate': endpoint({ method: 'PATCH', path: '/users/:id/deactivate', module: 'users', auth: true, body: noBody, params: common_1.paramsIdSchema, query: noQuery, response: auth_1.accountStatusResponseSchema }),
     'users.reactivate': endpoint({ method: 'PATCH', path: '/users/:id/reactivate', module: 'users', auth: true, body: noBody, params: common_1.paramsIdSchema, query: noQuery, response: auth_1.accountStatusResponseSchema }),
+    'users.retryWallet': endpoint({ method: 'POST', path: '/users/:id/wallet/retry', module: 'users', auth: true, body: users_1.retryWalletRequestSchema, params: common_1.paramsIdSchema, query: noQuery, response: users_1.retryWalletResponseSchema }),
 };
 function normalizedPath(value) {
     const path = value.split('?')[0].replace(/^https?:\/\/[^/]+/i, '').replace(/^\/api(?=\/|$)/, '');

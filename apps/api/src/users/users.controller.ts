@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { Role } from '@velar/types';
 import { UpdateWalletDto } from './dto/users.dto';
@@ -50,5 +51,12 @@ export class UsersController {
   @Patch(':id/reactivate')
   reactivate(@Param('id') id: string, @CurrentUser() user: any) {
     return this.users.reactivate(id, user.profile?.role as Role, user.id);
+  }
+
+  /** Reintenta la wallet custodial fallida de un usuario (admin). */
+  @Post(':id/wallet/retry')
+  @Roles('admin')
+  retryWallet(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.users.retryWallet(id, user.profile?.role as Role, user.id);
   }
 }

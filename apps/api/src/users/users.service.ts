@@ -3,6 +3,7 @@ import { SupabaseService } from '../common/supabase/supabase.service';
 import { WalletService } from '../escrow/wallet.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditEventType, Role } from '@velar/types';
+import { WalletReconciliationService } from './wallet-reconciliation.service';
 
 /**
  * Desactivar = banear en Supabase Auth por un plazo efectivamente infinito
@@ -25,6 +26,7 @@ export class UsersService {
     private supabase: SupabaseService,
     private wallets: WalletService,
     private audit: AuditService,
+    private reconciliation: WalletReconciliationService,
   ) {}
 
   async getProfile(userId: string) {
@@ -169,5 +171,41 @@ export class UsersService {
     });
 
     return { ok: true as const, userId: targetId, active };
+  }
+
+  /** Reintenta la wallet custodial fallida de un usuario. Solo admin. */
+  async retryWallet(targetId: string, actorRole: Role, actorId: string) {
+    if (actorRole !== 'admin') throw new ForbiddenException('Admin only');
+
+    const { data: before, error: loadError } = await this.supabase.admin
+      .from('profiles')
+      .select('stellar_wallet_status')
+      .eq('id', targetId)
+      .maybeSingle();
+    if (loadError || !before) throw new BadRequestException('Usuario no encontrado');
+
+    const result = await this.reconciliation.retryProfile(targetId, actorId);
+
+    await this.audit.emit({
+      type: AuditEventType.WALLET_RETRY_REQUESTED,
+      actorId,
+      payload: {
+        targetUserId: targetId,
+        previousStatus: before.stellar_wallet_status ?? null,
+        newStatus: result.stellar_wallet_status,
+        ...(result.stellar_wallet ? { publicKey: result.stellar_wallet } : {}),
+        ...(result.stellar_wallet_error ? { error: result.stellar_wallet_error } : {}),
+      },
+    });
+
+    return {
+      ok: true as const,
+      stellar_wallet: result.stellar_wallet,
+      stellar_wallet_status: result.stellar_wallet_status,
+      stellar_wallet_error: result.stellar_wallet_error,
+      stellar_network: result.stellar_network,
+      stellar_wallet_retry_count: result.stellar_wallet_retry_count,
+      stellar_wallet_last_retry_at: result.stellar_wallet_last_retry_at,
+    };
   }
 }

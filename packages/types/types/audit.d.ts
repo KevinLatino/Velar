@@ -39,6 +39,7 @@ export declare const AuditEventType: {
     readonly AUTH_EMAIL_CHANGE_REQUESTED: "auth_email_change_requested";
     readonly AUTH_ACCOUNT_DEACTIVATED: "auth_account_deactivated";
     readonly AUTH_ACCOUNT_REACTIVATED: "auth_account_reactivated";
+    readonly WALLET_RETRY_REQUESTED: "wallet_retry_requested";
 };
 export type AuditEventType = (typeof AuditEventType)[keyof typeof AuditEventType];
 export interface AuditEvent {

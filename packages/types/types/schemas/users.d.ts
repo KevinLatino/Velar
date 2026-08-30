@@ -30,6 +30,12 @@ export declare const profileRowSchema: z.ZodObject<{
     party_id: z.ZodNullable<z.ZodString>;
     stellar_wallet: z.ZodNullable<z.ZodString>;
     stellar_public_key: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    stellar_wallet_status: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    stellar_wallet_error: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    stellar_network: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    stellar_created_at: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    stellar_wallet_retry_count: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    stellar_wallet_last_retry_at: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     country: z.ZodOptional<z.ZodString>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
@@ -50,4 +56,15 @@ export declare const recipientRowSchema: z.ZodObject<{
 export declare const walletResponseSchema: z.ZodObject<{
     ok: z.ZodLiteral<true>;
     stellar_public_key: z.ZodString;
+}, z.core.$loose>;
+/** POST /users/:id/wallet/retry — Express may send `{}`; do not use z.undefined(). */
+export declare const retryWalletRequestSchema: z.ZodObject<{}, z.core.$strict>;
+export declare const retryWalletResponseSchema: z.ZodObject<{
+    ok: z.ZodLiteral<true>;
+    stellar_wallet: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    stellar_wallet_status: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    stellar_wallet_error: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    stellar_network: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    stellar_wallet_retry_count: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    stellar_wallet_last_retry_at: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$loose>;
