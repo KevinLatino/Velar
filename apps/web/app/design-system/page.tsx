@@ -4,13 +4,15 @@
  * Demuestra cada primitiva con sus variantes y estados. Sirve como docs y como
  * superficie para revisión de accesibilidad/regresión visual.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Rocket } from 'lucide-react';
 import {
   Alert,
   Badge,
   Button,
   Card,
+  CardFooter,
+  CardHeader,
   CardTitle,
   Checkbox,
   Cluster,
@@ -33,6 +35,14 @@ import {
   Tooltip,
 } from '@velar/ui';
 
+/** Country codes with per-country brand accents (reflected as `data-country`). */
+const COUNTRIES = [
+  { code: 'CR', name: 'Costa Rica' },
+  { code: 'CO', name: 'Colombia' },
+  { code: 'BR', name: 'Brasil' },
+  { code: 'AR', name: 'Argentina' },
+];
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-4">
@@ -44,15 +54,39 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function DesignSystemPage() {
   const [modal, setModal] = useState(false);
+  const [country, setCountry] = useState('CR');
+
+  // Live per-country branding: reflect the selection as `data-country` on <html>,
+  // the same accent hook ThemeProvider uses. Lets reviewers see brand variants
+  // (and drives the visual-regression baselines per country).
+  useEffect(() => {
+    document.documentElement.setAttribute('data-country', country);
+  }, [country]);
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-10">
-      <header className="mb-8 flex items-center justify-between">
+    <main className="mx-auto max-w-4xl px-6 py-10" data-testid="design-system">
+      <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-on-surface">VELAR Design System</h1>
-          <p className="mt-1 text-sm text-on-surface-variant">Primitivas tipadas, accesibles y temables. Probá el tema con el switch →</p>
+          <p className="mt-1 text-sm text-on-surface-variant">Primitivas tipadas, accesibles y temables. Probá el tema y la marca por país →</p>
         </div>
-        <ThemeSwitcher />
+        <Cluster gap={3}>
+          <label className="flex items-center gap-2 text-sm text-on-surface-variant">
+            <span>País</span>
+            <Select
+              aria-label="País para la marca"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+            >
+              {COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <ThemeSwitcher />
+        </Cluster>
       </header>
 
       <Stack gap={8}>
@@ -100,22 +134,22 @@ export default function DesignSystemPage() {
 
         <Section title="Forms">
           <Grid min={220} gap={4}>
-            <Field label="Nombre" hint="Como aparece en tu perfil">
-              <Input placeholder="Sofía" />
+            <Field label="Nombre" hint="Como aparece en tu perfil" htmlFor="ds-name">
+              <Input id="ds-name" placeholder="Sofía" />
             </Field>
-            <Field label="Email" error="Email inválido">
-              <Input type="email" invalid defaultValue="mal@" />
+            <Field label="Email" error="Email inválido" htmlFor="ds-email">
+              <Input id="ds-email" type="email" invalid defaultValue="mal@" />
             </Field>
-            <Field label="País">
-              <Select defaultValue="CR">
+            <Field label="País" htmlFor="ds-country">
+              <Select id="ds-country" defaultValue="CR">
                 <option value="CR">Costa Rica</option>
                 <option value="CO">Colombia</option>
                 <option value="BR">Brasil</option>
                 <option value="AR">Argentina</option>
               </Select>
             </Field>
-            <Field label="Notas" className="sm:col-span-2">
-              <Textarea placeholder="Escribí aquí…" />
+            <Field label="Notas" className="sm:col-span-2" htmlFor="ds-notes">
+              <Textarea id="ds-notes" placeholder="Escribí aquí…" />
             </Field>
             <Stack gap={2}>
               <Checkbox label="Acepto los términos" defaultChecked />
@@ -136,8 +170,33 @@ export default function DesignSystemPage() {
           />
         </Section>
 
-        <Section title="Card interactiva & Modal">
+        <Section title="Layout">
+          <Stack gap={4}>
+            <Cluster gap={2}>
+              <Badge tone="neutral">Cluster</Badge>
+              <Badge tone="neutral">alinea</Badge>
+              <Badge tone="neutral">en fila</Badge>
+            </Cluster>
+            <Grid min={140} gap={3}>
+              <Card variant="soft">Grid 1</Card>
+              <Card variant="soft">Grid 2</Card>
+              <Card variant="soft">Grid 3</Card>
+            </Grid>
+          </Stack>
+        </Section>
+
+        <Section title="Card (header/footer) & Modal">
           <Grid min={220} gap={4}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Card completa</CardTitle>
+              </CardHeader>
+              <p className="mt-1 text-sm text-on-surface-variant">Con header y footer.</p>
+              <CardFooter>
+                <Button size="sm" variant="ghost">Cancelar</Button>
+                <Button size="sm">Guardar</Button>
+              </CardFooter>
+            </Card>
             <Card variant="soft" interactive>
               <CardTitle>Card interactiva</CardTitle>
               <p className="mt-1 text-sm text-on-surface-variant">Elevación en hover.</p>
