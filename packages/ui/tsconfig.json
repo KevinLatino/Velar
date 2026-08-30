@@ -1,19 +1,12 @@
 {
+  "extends": "@velar/config/tsconfig/react-library.json",
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
     /*
-     * ESM, no CommonJS: el emit CJS antepone "use strict" a la directiva
-     * 'use client' y Next deja de reconocer el boundary de cliente, que exige
-     * la directiva como primera sentencia del archivo.
+     * ESM, no CommonJS: the base config uses `module: esnext`. A CJS emit would
+     * prepend "use strict" before the 'use client' directive and Next would stop
+     * recognizing the client boundary, which requires the directive to be the
+     * file's first statement.
      */
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "strict": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "declaration": true,
     "outDir": "./dist"
   },
   "include": ["src"]

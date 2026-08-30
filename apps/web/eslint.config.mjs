@@ -1,14 +1,16 @@
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
+import { sharedRules, sharedIgnores } from '@velar/config/eslint/rules';
 
 const eslintConfig = [
   ...nextCoreWebVitals,
   ...nextTypescript,
-  { ignores: ['.next/**', 'node_modules/**', 'next-env.d.ts'] },
+  { ignores: [...sharedIgnores, 'next-env.d.ts'] },
   {
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': 'warn',
+      // Shared across the monorepo (from @velar/config).
+      ...sharedRules,
+      // apps/web (Next + React) specific.
       'react/no-unescaped-entities': 'warn',
       'react-hooks/set-state-in-effect': 'warn',
       'react-hooks/static-components': 'warn',

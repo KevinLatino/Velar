@@ -76,14 +76,13 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
         tabIndex={-1}
         className={cn('velar-card relative z-10 w-full p-5 focus:outline-none motion-safe:animate-[velar-fade-up_.22s_ease]', width)}
       >
-        {(title || true) && (
-          <div className="mb-3 flex items-start justify-between gap-4">
-            {title && <h2 className="text-lg font-semibold text-on-surface">{title}</h2>}
-            <button type="button" onClick={onClose} aria-label="Cerrar" className="btn-ghost !h-8 !w-8 !px-0">
-              <X size={18} />
-            </button>
-          </div>
-        )}
+        {/* Header row always renders — it holds the close button, with or without a title. */}
+        <div className="mb-3 flex items-start justify-between gap-4">
+          {title && <h2 className="text-lg font-semibold text-on-surface">{title}</h2>}
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="btn-ghost !h-8 !w-8 !px-0">
+            <X size={18} />
+          </button>
+        </div>
         <div className="text-sm text-on-surface-variant">{children}</div>
         {footer && <div className="mt-5 flex justify-end gap-2">{footer}</div>}
       </div>

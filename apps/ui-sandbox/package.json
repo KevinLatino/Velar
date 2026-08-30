@@ -1,0 +1,30 @@
+{
+  "name": "@velar/ui-sandbox",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Second consumer of @velar/ui — proves the package is reusable outside apps/web (issue #76).",
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "npm run build --workspace @velar/ui",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src",
+    "pretypecheck": "npm run build --workspace @velar/ui",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@velar/ui": "*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@velar/config": "*",
+    "@vitejs/plugin-react": "^4.3.0",
+    "eslint": "^9",
+    "typescript": "^5",
+    "vite": "^6.0.0"
+  }
+}
