@@ -12,8 +12,12 @@
     }
   },
   "sideEffects": false,
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -26,6 +30,8 @@
   "devDependencies": {
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@velar/config": "*",
+    "eslint": "^9",
     "typescript": "^5"
   }
 }
