@@ -507,3 +507,45 @@ fixtures — sin backend ni credenciales.
 
 Localizado (es), responsive y accesible (hereda foco atrapado/Escape de `Modal`; `Tabs` con
 navegación por teclado). Nunca se usa `service_role` ni secretos en el cliente.
+
+## 17. Design System: docs, accesibilidad y regresión visual (issue #75)
+
+Capa de calidad para el design system (`@velar/ui`). No cambia el comportamiento de
+los componentes: solo agrega documentación y gates de testing.
+
+### Catálogo vivo — `/design-system`
+`apps/web/app/design-system/page.tsx` demuestra **cada primitiva exportada** por
+`@velar/ui` con sus variantes/estados, un **toggle de tema** (claro/oscuro vía el
+`ThemeSwitcher` real) y un **selector de país** que aplica `data-country` en `<html>`
+para ver el acento de marca por país. Los `Field` van con `htmlFor` + `id` en el
+control (uso accesible correcto).
+
+### Accesibilidad — `npm run test` (jest-axe)
+`apps/web/jest.config.mjs` define dos proyectos:
+- **`unit`** (node): los `*.spec.ts` de lógica de siempre.
+- **`a11y`** (jsdom): `*.a11y.test.tsx` que renderizan cada primitiva y corren
+  `axe-core` (`app/design-system/__tests__/primitives.a11y.test.tsx`). Un test de
+  **known-bad** (`known-bad.a11y.test.tsx`) prueba que el gate detecta violaciones
+  (`button-name`, `image-alt`), así no se pudre en silencio.
+
+```bash
+npm run test --workspace apps/web    # unit + a11y
+```
+
+### Regresión visual — Playwright (gate aparte)
+`apps/web/playwright.config.ts` + `apps/web/tests/visual/` capturan `/design-system`
+(claro y oscuro) y comparan contra baselines commiteados en
+`tests/visual/__screenshots__/`. **No** es parte de `npm run test` (que queda sin
+navegador).
+
+```bash
+npm run test:visual         --workspace apps/web   # compara contra baseline
+npm run test:visual:update  --workspace apps/web   # actualiza baseline a propósito
+```
+
+Requiere el navegador de Playwright una vez: `npx playwright install chromium`.
+Los baselines son **sensibles al SO** (el nombre lleva `-darwin`/`-linux`): un cambio
+visual deliberado se acepta regenerándolos con `test:visual:update`, y el SO que
+posee el baseline (p. ej. el runner de CI) debe regenerar el suyo. El servidor de
+pruebas arranca con `NEXT_PUBLIC_SUPABASE_*` **públicos** placeholder — sin
+credenciales VELAR.
